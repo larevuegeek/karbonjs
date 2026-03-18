@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createUserCache } from './user-cache'
+import { createUserCache } from './user-cache.js'
 
 const mockUser = { id: 1, username: 'david', email: 'david@test.com', roles: ['ROLE_USER'] }
 

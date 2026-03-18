@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ImageHover, ImageRounded, ImageAspect } from '@karbonjs/ui-core'
-import { ImgBox } from '../overlay/ImgBox'
+import { ImgBox } from '../overlay/ImgBox.js'
 
 export interface ImageProps {
   src: string

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { debounce, throttle } from './debounce'
+import { debounce, throttle } from './debounce.js'
 
 describe('debounce', () => {
   it('delays execution', async () => {

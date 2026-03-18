@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createServerApi } from './server'
+import { createServerApi } from './server.js'
 
 describe('createServerApi', () => {
   beforeEach(() => {

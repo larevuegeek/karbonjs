@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatSize, formatCount, clamp, formatPercent, formatPrice, randomInt } from './number'
+import { formatSize, formatCount, clamp, formatPercent, formatPrice, randomInt } from './number.js'
 
 describe('formatSize', () => {
   it('formats bytes in French', () => {

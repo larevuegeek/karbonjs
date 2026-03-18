@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { hasRole, highestRole, isAdmin } from './roles'
-import type { RoleHierarchy } from './roles'
+import { hasRole, highestRole, isAdmin } from './roles.js'
+import type { RoleHierarchy } from './roles.js'
 
 const hierarchy: RoleHierarchy = {
   'ROLE_SUPER_ADMIN': ['ROLE_ADMIN'],

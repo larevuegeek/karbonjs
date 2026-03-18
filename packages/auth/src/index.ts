@@ -1,8 +1,8 @@
-export { createUserCache } from './cache/user-cache'
-export type { UserCacheOptions } from './cache/user-cache'
+export { createUserCache } from './cache/user-cache.js'
+export type { UserCacheOptions } from './cache/user-cache.js'
 
-export { createTokenManager } from './token/token-manager'
-export type { TokenManagerConfig, TokenPair } from './token/token-manager'
+export { createTokenManager } from './token/token-manager.js'
+export type { TokenManagerConfig, TokenPair } from './token/token-manager.js'
 
-export { hasRole, isAdmin, highestRole } from './roles/roles'
-export type { RoleHierarchy } from './roles/roles'
+export { hasRole, isAdmin, highestRole } from './roles/roles.js'
+export type { RoleHierarchy } from './roles/roles.js'

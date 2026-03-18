@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { truncate, slugify, capitalize, pluralize, stripHtml, initials, hashColorIndex, escapeHtml, camelCase, kebabCase, isImage } from './string'
+import { truncate, slugify, capitalize, pluralize, stripHtml, initials, hashColorIndex, escapeHtml, camelCase, kebabCase, isImage } from './string.js'
 
 describe('truncate', () => {
   it('returns short text unchanged', () => {

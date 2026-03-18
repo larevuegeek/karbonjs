@@ -1,4 +1,4 @@
-export { createClientApi } from './client/client'
-export type { ClientApiConfig } from './client/client'
+export { createClientApi } from './client/client.js'
+export type { ClientApiConfig } from './client/client.js'
 
-export { createServerApi } from './server/server'
+export { createServerApi } from './server/server.js'

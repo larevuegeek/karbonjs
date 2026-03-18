@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatDateTime, timeAgo, formatMonthYear, isToday, isPast } from './date'
+import { formatDate, formatDateTime, timeAgo, formatMonthYear, isToday, isPast } from './date.js'
 
 describe('formatDate', () => {
   it('formats date in French by default', () => {
