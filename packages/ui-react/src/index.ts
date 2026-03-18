@@ -99,6 +99,10 @@ export type { DividerProps } from './divider/Divider'
 export { Kbd } from './kbd/Kbd'
 export type { KbdProps } from './kbd/Kbd'
 
+// editor
+export { RichTextEditor } from './editor/RichTextEditor'
+export type { RichTextEditorProps } from './editor/RichTextEditor'
+
 // data
 export { DataTable } from './data/DataTable'
 export type { DataTableProps } from './data/DataTable'
