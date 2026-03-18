@@ -124,7 +124,7 @@
       {required}
       {disabled}
       {readonly}
-      {autocomplete}
+      autocomplete={autocomplete as any}
       {oninput}
       {onchange}
       {onkeydown}

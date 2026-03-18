@@ -1,8 +1,68 @@
 # UI Components
 
-30 components available in both `@karbonjs/ui-svelte` and `@karbonjs/ui-react`.
+31 components available in `@karbonjs/ui-svelte` (30 in `@karbonjs/ui-react`).
 
 All components use Tailwind CSS + `--karbon-*` CSS variables for theming.
+
+## RichTextEditor
+
+Full WYSIWYG editor — zero dependencies, built on `contenteditable`.
+
+```svelte
+<script>
+  import { RichTextEditor } from '@karbonjs/ui-svelte'
+  let content = $state('')
+</script>
+
+<!-- Simple -->
+<RichTextEditor bind:value={content} />
+
+<!-- With media provider -->
+<RichTextEditor bind:value={content} media={{
+  browse: async (page, search) => {
+    const res = await api(`/media?page=${page}&search=${search}`)
+    return { files: res.data, total: res.meta.total }
+  },
+  upload: async (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await api('/media/upload', { method: 'POST', body: form })
+    return { url: res.url, name: res.filename }
+  }
+}} />
+```
+
+**Features:**
+- Toolbar: bold, italic, underline, strikethrough, headings (H2-H4), font sizes, text color
+- Alignment: left, center, right, justify
+- Lists: ordered, unordered, indent/outdent, blockquote, code block
+- Insert: links (with title, class, target), images (upload + media explorer), tables, YouTube/Vimeo embeds
+- Source mode: HTML editing with syntax highlighting and line numbers
+- Find & Replace
+- Context menu: right-click on images, links, tables for quick actions
+- Element properties: edit class, style, id on any element via double-click
+- Fullscreen mode, word/character count
+- Keyboard shortcuts: Ctrl+B/I/U/K/H, Tab for indent
+
+**Props:**
+
+| Prop | Type | Default |
+|---|---|---|
+| `value` | `string` (bindable) | `''` |
+| `placeholder` | `string` | `'Rédigez votre contenu...'` |
+| `media` | `MediaProvider` | — |
+
+**MediaProvider interface:**
+
+```ts
+interface MediaProvider {
+  browse: (page: number, search?: string) => Promise<{ files: MediaFile[]; total: number }>
+  upload?: (file: File) => Promise<{ url: string; name: string }>
+  delete?: (id: number | string) => Promise<void>
+}
+```
+
+No `media` prop → image insertion via URL only. With `media` → full media explorer with browse/upload.
 
 ## Button
 

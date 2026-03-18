@@ -27,28 +27,21 @@
   } as const
 
   const s = $derived(sizes[size])
-
-  function toggle() {
-    if (!disabled) checked = !checked
-  }
 </script>
 
 <label class="inline-flex items-center gap-2.5 {disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} {className}">
-  <input type="checkbox" {name} bind:checked {disabled} {onchange} class="sr-only" />
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    onclick={toggle}
+  <input type="checkbox" {name} bind:checked {disabled} {onchange} class="sr-only peer" />
+  <span
     class="relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200
       {s.track}
-      {checked ? 'bg-[var(--karbon-primary)]' : 'bg-[var(--karbon-border,rgba(0,0,0,0.07))]'}"
-    role="switch"
-    aria-checked={checked}
+      {checked ? 'bg-[var(--karbon-primary)]' : 'bg-[var(--karbon-border,rgba(0,0,0,0.07))]'}
+      peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--karbon-primary)]/20"
+    aria-hidden="true"
   >
     <span
       class="inline-block rounded-full bg-white shadow-sm transition-transform duration-200 {s.dot} {checked ? s.translate : 'translate-x-0.5'}"
     ></span>
-  </div>
+  </span>
   {#if label}
     <span class="text-sm font-medium text-[var(--karbon-text,#1a1635)] select-none">{label}</span>
   {/if}

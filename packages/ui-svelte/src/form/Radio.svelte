@@ -38,8 +38,7 @@
           value={opt.value}
           checked={value === opt.value}
           disabled={opt.disabled || disabled}
-          {onchange}
-          onchange={() => value = opt.value}
+          onchange={(e) => { value = opt.value; onchange?.(e) }}
           class="mt-0.5 h-4 w-4 shrink-0 border-[var(--karbon-border-input,rgba(255,255,255,0.10))] bg-[var(--karbon-bg-input,rgba(255,255,255,0.06))] text-[var(--karbon-primary)] focus:ring-2 focus:ring-[var(--karbon-primary)]/20 focus:ring-offset-0 transition-colors cursor-pointer disabled:cursor-not-allowed"
         />
         <div class="select-none">

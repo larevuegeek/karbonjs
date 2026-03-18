@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/ui-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared design tokens, CSS, and types for Karbon UI components",
   "type": "module",
   "main": "dist/index.js",

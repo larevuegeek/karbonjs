@@ -38,6 +38,7 @@ src/
 ├── data/         → DataTable, Pagination
 ├── divider/      → Divider
 ├── dropdown/     → Dropdown
+├── editor/       → RichTextEditor (WYSIWYG, MediaProvider)
 ├── form/         → FormInput, Select, Checkbox, Toggle, Textarea, Radio, Slider, DatePicker, ColorPicker
 ├── image/        → Image, ImgZoom
 ├── kbd/          → Kbd
@@ -55,7 +56,7 @@ src/
 ```
 ui-core/src/types/
 ├── accordion.ts, alert.ts, avatar.ts, badge.ts, breadcrumb.ts, button.ts
-├── card.ts, carousel.ts, data.ts, divider.ts, dropdown.ts, form.ts
+├── card.ts, carousel.ts, data.ts, divider.ts, dropdown.ts, editor.ts, form.ts
 ├── image.ts, kbd.ts, layout.ts, overlay.ts, progress.ts, skeleton.ts
 ├── tabs.ts, tooltip.ts
 └── index.ts → barrel re-export
@@ -96,12 +97,12 @@ pnpm run publish:all  # Publish to npm
 - [x] @karbonjs/types — api.ts (ApiList, ApiResult, ApiError, ApiCallOptions, PaginationParams) + auth.ts (AuthUser)
 - [x] @karbonjs/api — createServerApi + createClientApi (timeout, refresh dedup, error truncation)
 - [x] @karbonjs/auth — roles (hasRole, isAdmin, highestRole), tokenManager (with AbortController), userCache (with purgeExpired)
-- [x] @karbonjs/ui-core — design tokens CSS (colors, spacing, shadows, dark/light), 20 type files
-- [x] @karbonjs/ui-svelte — 30 Svelte 5 components, Tailwind only, a11y labels
-- [x] @karbonjs/ui-react — 30 React components, same set
+- [x] @karbonjs/ui-core — design tokens CSS (colors, spacing, shadows, dark/light), 21 type files
+- [x] @karbonjs/ui-svelte — 31 Svelte 5 components + RichTextEditor, Tailwind only, 0 svelte-check warnings
+- [x] @karbonjs/ui-react — 30 React components, same set (editor React à venir)
 - [x] Testing — 68 tests (vitest) across utils, auth, api
-- [x] CI/CD — GitHub Actions (test Node 18/20/22, publish on main)
-- [x] Security audit — ReDoS fix, timer cleanup, token validation, error truncation, SameSite enforcement
+- [x] CI/CD — GitHub Actions (test Node 20/22)
+- [x] Security audit — ReDoS fix, timer cleanup, token validation, error truncation, SameSite enforcement, XSS escaping in editor
 - [x] Documentation — docs/ (utils, api, auth, components, theming)
 
 ## What's Missing / TODO

@@ -30,12 +30,10 @@
 
 <svelte:window onclick={() => open = false} />
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="relative inline-block {className}" onclick={(e) => e.stopPropagation()}>
-  <div onclick={() => open = !open} class="cursor-pointer">
+<div class="relative inline-block {className}">
+  <button type="button" onclick={(e) => { e.stopPropagation(); open = !open }} class="cursor-pointer bg-transparent border-none p-0 m-0">
     {@render trigger()}
-  </div>
+  </button>
 
   {#if open}
     <div class="absolute z-50 mt-1 min-w-[12rem] rounded-xl border border-[var(--karbon-border,rgba(0,0,0,0.07))] bg-[var(--karbon-bg-card,#fff)] shadow-xl py-1

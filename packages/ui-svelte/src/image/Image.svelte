@@ -64,20 +64,15 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} {isClickable ? 'cursor-pointer' : ''} {className}"
-  onclick={isClickable ? handleClick : undefined}
->
-  <img
-    src={imgSrc}
-    {alt}
-    onerror={handleError}
-    class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]}"
-    loading="lazy"
-  />
-</div>
+{#if isClickable}
+  <button type="button" onclick={handleClick} class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} cursor-pointer bg-transparent border-none p-0 m-0 block {className}">
+    <img src={imgSrc} {alt} onerror={handleError} class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]}" loading="lazy" />
+  </button>
+{:else}
+  <div class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} {className}">
+    <img src={imgSrc} {alt} onerror={handleError} class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]}" loading="lazy" />
+  </div>
+{/if}
 
 {#if imgbox && imgboxOpen}
   <ImgBox

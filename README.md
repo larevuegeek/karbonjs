@@ -1,6 +1,6 @@
 # KarbonJS
 
-Modern full-stack TypeScript toolkit — utilities, API helpers, auth tools, and **30 UI components** for Svelte 5 & React.
+Modern full-stack TypeScript toolkit — utilities, API helpers, auth tools, **31 UI components** + WYSIWYG editor for Svelte 5 & React.
 
 Frontend companion to [Karbon Framework](https://crates.io/crates/karbon-framework) (Rust backend).
 
@@ -13,7 +13,7 @@ Frontend companion to [Karbon Framework](https://crates.io/crates/karbon-framewo
 | `@karbonjs/api` | Type-safe API client, SSR + client, auto token refresh | `pnpm add @karbonjs/api` |
 | `@karbonjs/auth` | Token manager, user cache, role hierarchy | `pnpm add @karbonjs/auth` |
 | `@karbonjs/ui-core` | Design tokens CSS + shared prop types | `pnpm add @karbonjs/ui-core` |
-| `@karbonjs/ui-svelte` | 30 Svelte 5 UI components (Tailwind) | `pnpm add @karbonjs/ui-svelte` |
+| `@karbonjs/ui-svelte` | 31 Svelte 5 UI components + WYSIWYG editor (Tailwind) | `pnpm add @karbonjs/ui-svelte` |
 | `@karbonjs/ui-react` | 30 React UI components (Tailwind) | `pnpm add @karbonjs/ui-react` |
 
 ## Quick Start
@@ -34,7 +34,10 @@ pnpm add @karbonjs/utils @karbonjs/ui-svelte
 </Card>
 ```
 
-## UI Components (30)
+## UI Components (31)
+
+### Editor
+`RichTextEditor` — full WYSIWYG editor with toolbar, source mode, tables, embeds, media explorer (via `MediaProvider`)
 
 ### Form (9)
 `FormInput` · `Select` · `Checkbox` · `Toggle` · `Radio` · `Textarea` · `Slider` · `DatePicker` · `ColorPicker`
@@ -84,7 +87,7 @@ See [docs/theming.md](docs/theming.md) for all available tokens.
 - [Utils](docs/utils.md) — all utility functions with examples
 - [API Client](docs/api.md) — SSR + client setup, token refresh
 - [Auth](docs/auth.md) — roles, token manager, user cache
-- [Components](docs/components.md) — all 30 components with props
+- [Components](docs/components.md) — all 31 components with props
 - [Theming](docs/theming.md) — design tokens, dark/light mode
 
 ## Development

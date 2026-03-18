@@ -56,8 +56,15 @@
 
   // Calendar state
   const selectedDate = $derived(value ? new Date(value + 'T00:00:00') : null)
-  let viewYear = $state(selectedDate?.getFullYear() ?? new Date().getFullYear())
-  let viewMonth = $state(selectedDate?.getMonth() ?? new Date().getMonth())
+  let viewYear = $state(new Date().getFullYear())
+  let viewMonth = $state(new Date().getMonth())
+
+  $effect(() => {
+    if (selectedDate) {
+      viewYear = selectedDate.getFullYear()
+      viewMonth = selectedDate.getMonth()
+    }
+  })
 
   const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
   const dayNames = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']

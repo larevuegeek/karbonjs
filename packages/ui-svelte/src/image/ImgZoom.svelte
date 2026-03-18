@@ -21,7 +21,7 @@
     class: className = ''
   }: Props = $props()
 
-  let container: HTMLDivElement
+  let container = $state<HTMLElement>(undefined!)
   let zooming = $state(false)
   let posX = $state(50)
   let posY = $state(50)
@@ -43,10 +43,7 @@
   }
 
   function handleMouseEnter(e: MouseEvent) {
-    if (trigger === 'hover') {
-      zooming = true
-      updatePosition(e)
-    }
+    if (trigger === 'hover') { zooming = true; updatePosition(e) }
   }
 
   function handleMouseMove(e: MouseEvent) {
@@ -58,39 +55,42 @@
   }
 
   function handleClick(e: MouseEvent) {
-    if (trigger === 'click') {
-      zooming = !zooming
-      if (zooming) updatePosition(e)
-    }
+    zooming = !zooming
+    if (zooming) updatePosition(e)
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); zooming = !zooming }
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  bind:this={container}
-  class="relative overflow-hidden {roundedClasses[rounded]} {trigger === 'click' ? 'cursor-zoom-in' : ''} {zooming && trigger === 'click' ? 'cursor-zoom-out' : ''} {className}"
-  onmouseenter={handleMouseEnter}
-  onmousemove={handleMouseMove}
-  onmouseleave={handleMouseLeave}
-  onclick={handleClick}
->
-  <img
-    {src}
-    {alt}
-    class="w-full h-full object-cover block"
-    loading="lazy"
-  />
-
-  {#if zooming}
-    <div
-      class="absolute inset-0 pointer-events-none"
-      style="
-        background-image: url({zoomImage});
-        background-size: {zoom * 100}%;
-        background-position: {posX}% {posY}%;
-        background-repeat: no-repeat;
-      "
-    ></div>
-  {/if}
-</div>
+{#if trigger === 'click'}
+  <button
+    type="button"
+    bind:this={container}
+    class="relative overflow-hidden {roundedClasses[rounded]} bg-transparent border-none p-0 m-0 block {zooming ? 'cursor-zoom-out' : 'cursor-zoom-in'} {className}"
+    onmousemove={handleMouseMove}
+    onmouseleave={handleMouseLeave}
+    onclick={handleClick}
+  >
+    <img {src} {alt} class="w-full h-full object-cover block" loading="lazy" />
+    {#if zooming}
+      <span class="absolute inset-0 pointer-events-none" style="background-image: url({zoomImage}); background-size: {zoom * 100}%; background-position: {posX}% {posY}%; background-repeat: no-repeat;"></span>
+    {/if}
+  </button>
+{:else}
+  <div
+    bind:this={container}
+    role="img"
+    aria-label={alt || 'Zoomable image'}
+    class="relative overflow-hidden {roundedClasses[rounded]} {className}"
+    onmouseenter={handleMouseEnter}
+    onmousemove={handleMouseMove}
+    onmouseleave={handleMouseLeave}
+  >
+    <img {src} {alt} class="w-full h-full object-cover block" loading="lazy" />
+    {#if zooming}
+      <div class="absolute inset-0 pointer-events-none" style="background-image: url({zoomImage}); background-size: {zoom * 100}%; background-position: {posX}% {posY}%; background-repeat: no-repeat;"></div>
+    {/if}
+  </div>
+{/if}

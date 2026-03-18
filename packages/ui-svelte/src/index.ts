@@ -66,6 +66,9 @@ export { default as Divider } from './divider/Divider.svelte'
 // kbd
 export { default as Kbd } from './kbd/Kbd.svelte'
 
+// editor
+export { default as RichTextEditor } from './editor/RichTextEditor.svelte'
+
 // data
 export { default as DataTable } from './data/DataTable.svelte'
 export { default as Pagination } from './data/Pagination.svelte'
