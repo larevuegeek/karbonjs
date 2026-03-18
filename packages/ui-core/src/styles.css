@@ -1,0 +1,78 @@
+/* @karbonjs/ui-core — Base design tokens */
+
+:root {
+  /* ── Colors ── */
+  --karbon-primary: #cc1a1a;
+  --karbon-primary-hover: #a81515;
+  --karbon-secondary: #0ea5e9;
+  --karbon-accent: #f59e0b;
+  --karbon-danger: #ef4444;
+  --karbon-success: #22c55e;
+  --karbon-warning: #f59e0b;
+  --karbon-info: #3b82f6;
+
+  /* ── Border radius ── */
+  --karbon-radius-sm: 0.25rem;
+  --karbon-radius-md: 0.5rem;
+  --karbon-radius-lg: 0.75rem;
+  --karbon-radius-xl: 1rem;
+  --karbon-radius-full: 9999px;
+
+  /* ── Typography ── */
+  --karbon-font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --karbon-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* ── Transitions ── */
+  --karbon-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Spacing ── */
+  --karbon-space-xs: 0.25rem;
+  --karbon-space-sm: 0.5rem;
+  --karbon-space-md: 1rem;
+  --karbon-space-lg: 1.5rem;
+  --karbon-space-xl: 2rem;
+
+  /* ── Shadows ── */
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Dark theme tokens ── */
+[data-theme="dark"], .karbon-dark {
+  --karbon-bg: #060412;
+  --karbon-bg-2: #080515;
+  --karbon-bg-card: #0a0820;
+  --karbon-bg-input: rgba(255, 255, 255, 0.06);
+  --karbon-text: rgba(255, 255, 255, 0.90);
+  --karbon-text-2: rgba(255, 255, 255, 0.50);
+  --karbon-text-3: rgba(255, 255, 255, 0.30);
+  --karbon-text-4: rgba(255, 255, 255, 0.18);
+  --karbon-border: rgba(255, 255, 255, 0.06);
+  --karbon-border-input: rgba(255, 255, 255, 0.10);
+  --karbon-border-input-focus: rgba(204, 26, 26, 0.5);
+  --karbon-nav-hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Light theme tokens ── */
+[data-theme="light"], .karbon-light {
+  --karbon-bg: #f2f0fa;
+  --karbon-bg-2: #e8e6f0;
+  --karbon-bg-card: #ffffff;
+  --karbon-bg-input: #ffffff;
+  --karbon-text: #1a1635;
+  --karbon-text-2: #5a567e;
+  --karbon-text-3: #8e8aae;
+  --karbon-text-4: #b5b2cc;
+  --karbon-border: rgba(0, 0, 0, 0.07);
+  --karbon-border-input: rgba(0, 0, 0, 0.12);
+  --karbon-border-input-focus: rgba(204, 26, 26, 0.5);
+  --karbon-nav-hover-bg: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Alert animations ── */
+@keyframes karbon-alert-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

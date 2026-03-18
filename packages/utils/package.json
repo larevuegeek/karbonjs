@@ -1,0 +1,29 @@
+{
+  "name": "@karbonjs/utils",
+  "version": "0.1.0",
+  "description": "Utility functions for date, string, number formatting and more",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "keywords": ["karbon", "utils", "date", "string", "number", "formatting"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USER/karbonjs",
+    "directory": "packages/utils"
+  }
+}

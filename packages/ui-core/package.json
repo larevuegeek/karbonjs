@@ -1,0 +1,16 @@
+{
+  "name": "@karbonjs/ui-core",
+  "version": "0.1.0",
+  "description": "Shared design tokens, CSS, and types for Karbon UI components",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./css": "./src/styles.css"
+  },
+  "files": ["dist", "src/styles.css"],
+  "scripts": { "build": "tsc", "dev": "tsc --watch" },
+  "publishConfig": { "access": "public" },
+  "license": "MIT"
+}

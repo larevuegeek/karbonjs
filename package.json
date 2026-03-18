@@ -1,0 +1,21 @@
+{
+  "name": "karbonjs",
+  "private": true,
+  "description": "KarbonJS — Modern full-stack utilities, API helpers, and UI components",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r run dev",
+    "lint": "pnpm -r run lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "publish:all": "pnpm -r publish --access public"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

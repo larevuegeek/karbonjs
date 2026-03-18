@@ -1,0 +1,55 @@
+<script lang="ts">
+  import type { ToggleSize } from '@karbonjs/ui-core'
+
+  interface Props {
+    name: string
+    checked?: boolean
+    label?: string
+    size?: ToggleSize
+    disabled?: boolean
+    class?: string
+    onchange?: (e: Event) => void
+  }
+
+  let {
+    name,
+    checked = $bindable(false),
+    label = '',
+    size = 'md',
+    disabled = false,
+    class: className = '',
+    onchange
+  }: Props = $props()
+
+  const sizes = {
+    sm: { track: 'w-8 h-[18px]', dot: 'h-3.5 w-3.5', translate: 'translate-x-3.5' },
+    md: { track: 'w-10 h-[22px]', dot: 'h-4.5 w-4.5', translate: 'translate-x-4.5' }
+  } as const
+
+  const s = $derived(sizes[size])
+
+  function toggle() {
+    if (!disabled) checked = !checked
+  }
+</script>
+
+<label class="inline-flex items-center gap-2.5 {disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} {className}">
+  <input type="checkbox" {name} bind:checked {disabled} {onchange} class="sr-only" />
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    onclick={toggle}
+    class="relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200
+      {s.track}
+      {checked ? 'bg-[var(--karbon-primary)]' : 'bg-[var(--karbon-border,rgba(0,0,0,0.07))]'}"
+    role="switch"
+    aria-checked={checked}
+  >
+    <span
+      class="inline-block rounded-full bg-white shadow-sm transition-transform duration-200 {s.dot} {checked ? s.translate : 'translate-x-0.5'}"
+    ></span>
+  </div>
+  {#if label}
+    <span class="text-sm font-medium text-[var(--karbon-text,#1a1635)] select-none">{label}</span>
+  {/if}
+</label>
