@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/ui-svelte",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Karbon UI components for Svelte 5",
   "type": "module",
   "svelte": "src/index.ts",
