@@ -10,7 +10,7 @@ Frontend companion to [Karbon Framework](https://crates.io/crates/karbon-framewo
 |---|---|---|
 | `@karbonjs/utils` | Date, string, number formatters, debounce, cookies | `pnpm add @karbonjs/utils` |
 | `@karbonjs/types` | Shared TypeScript types (API, Auth) | `pnpm add @karbonjs/types` |
-| `@karbonjs/api` | Type-safe API client, SSR + client, auto token refresh | `pnpm add @karbonjs/api` |
+| `@karbonjs/api` | API client (SSR + client), SvelteKit proxy, rate limiter | `pnpm add @karbonjs/api` |
 | `@karbonjs/auth` | Token manager, user cache, role hierarchy | `pnpm add @karbonjs/auth` |
 | `@karbonjs/ui-core` | Design tokens CSS + shared prop types | `pnpm add @karbonjs/ui-core` |
 | `@karbonjs/ui-svelte` | 31 Svelte 5 UI components + WYSIWYG editor (Tailwind) | `pnpm add @karbonjs/ui-svelte` |
@@ -33,6 +33,29 @@ pnpm add @karbonjs/utils @karbonjs/ui-svelte
   <Button variant="primary" arrow>Lire la suite</Button>
 </Card>
 ```
+
+## API Proxy (SvelteKit)
+
+Secure proxy for SvelteKit catch-all routes — forward requests to your Karbon backend with built-in security:
+
+```ts
+// src/routes/api/[...path]/+server.ts
+import { createProxy } from '@karbonjs/api/server'
+
+export const { GET, POST, PUT, PATCH, DELETE } = createProxy({
+  backend: 'http://localhost:8080',
+  prefix: '/api',
+  blockedPrefixes: ['internal'],
+  csrf: true,
+  rateLimit: {
+    'auth/login':    { max: 20, windowSec: 60 },
+    'auth/register': { max: 10, windowSec: 60 },
+    '*':             { max: 200, windowSec: 60 },
+  },
+})
+```
+
+**Included:** path sanitization, CSRF (Origin vs Host), sliding window rate limiter (per IP), body size limit, request/response streaming, cookie forwarding, `X-Forwarded-For`.
 
 ## UI Components (31)
 
@@ -85,7 +108,7 @@ See [docs/theming.md](docs/theming.md) for all available tokens.
 ## Documentation
 
 - [Utils](docs/utils.md) — all utility functions with examples
-- [API Client](docs/api.md) — SSR + client setup, token refresh
+- [API Client](docs/api.md) — SSR + client setup, token refresh, proxy, rate limiting
 - [Auth](docs/auth.md) — roles, token manager, user cache
 - [Components](docs/components.md) — all 31 components with props
 - [Theming](docs/theming.md) — design tokens, dark/light mode
@@ -107,7 +130,7 @@ karbonjs/
 ├── packages/
 │   ├── utils/        → @karbonjs/utils      (0 deps)
 │   ├── types/        → @karbonjs/types      (0 deps)
-│   ├── api/          → @karbonjs/api        (depends on types)
+│   ├── api/          → @karbonjs/api        (depends on types, exports: ./server)
 │   ├── auth/         → @karbonjs/auth       (depends on types)
 │   ├── ui-core/      → @karbonjs/ui-core    (0 deps)
 │   ├── ui-svelte/    → @karbonjs/ui-svelte  (depends on ui-core, peer: svelte 5)

@@ -11,7 +11,7 @@ karbonjs/
 ├── packages/
 │   ├── utils/       → @karbonjs/utils      (TS pur, 0 deps)
 │   ├── types/       → @karbonjs/types      (TS pur, 0 deps, split: api.ts + auth.ts)
-│   ├── api/         → @karbonjs/api        (split: client/ + server/)
+│   ├── api/         → @karbonjs/api        (split: client/ + server/ with proxy, rate-limiter)
 │   ├── auth/        → @karbonjs/auth       (split: roles/ + token/ + cache/)
 │   ├── ui-core/     → @karbonjs/ui-core    (CSS + types/, 1 file par type)
 │   ├── ui-svelte/   → @karbonjs/ui-svelte  (30 Svelte 5 components, Tailwind)
@@ -95,7 +95,7 @@ pnpm run publish:all  # Publish to npm
 
 - [x] @karbonjs/utils — date, string, number, debounce (with cancel), cookie, isImage
 - [x] @karbonjs/types — api.ts (ApiList, ApiResult, ApiError, ApiCallOptions, PaginationParams) + auth.ts (AuthUser)
-- [x] @karbonjs/api — createServerApi + createClientApi (timeout, refresh dedup, error truncation)
+- [x] @karbonjs/api — createServerApi + createClientApi (timeout, refresh dedup, error truncation) + createProxy (SvelteKit API proxy with rate limiting, CSRF, path sanitization, streaming) + createRateLimiter (sliding window, per IP+route)
 - [x] @karbonjs/auth — roles (hasRole, isAdmin, highestRole), tokenManager (with AbortController), userCache (with purgeExpired)
 - [x] @karbonjs/ui-core — design tokens CSS (colors, spacing, shadows, dark/light), 21 type files
 - [x] @karbonjs/ui-svelte — 31 Svelte 5 components + RichTextEditor, Tailwind only, 0 svelte-check warnings

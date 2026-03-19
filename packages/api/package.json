@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/api",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Type-safe API client for Karbon backends with SSR and client support",
   "type": "module",
   "main": "dist/index.js",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
     }
   },
   "files": ["dist"],

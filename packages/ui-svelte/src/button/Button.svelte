@@ -52,7 +52,7 @@
   disabled={isDisabled}
   {onclick}
   class="
-    inline-flex items-center justify-center font-semibold rounded-lg
+    inline-flex items-center justify-center gap-2 font-semibold rounded-lg
     transition-all duration-300 ease-out
     focus:outline-none focus:ring-2 focus:ring-offset-0
     cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed
