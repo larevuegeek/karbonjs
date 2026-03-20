@@ -98,8 +98,9 @@ export function createProxy(config: ProxyConfig) {
     const rawPath = params.path ?? ''
 
     // 1. Sanitize path
-    if (rawPath.includes('..') || rawPath.includes('//')) {
-      return jsonResponse(400, 'Invalid path')
+    const decodedPath = decodeURIComponent(rawPath)
+    if (decodedPath.includes('..') || rawPath.includes('%2e') || rawPath.includes('%2E') || rawPath.includes('//')) {
+      return new Response('Forbidden path', { status: 403 })
     }
 
     // 2. Block forbidden prefixes
@@ -115,8 +116,9 @@ export function createProxy(config: ProxyConfig) {
     try { clientIp = event.getClientAddress() } catch { /* dev mode */ }
 
     // 4. Rate limiting
+    let rl: { allowed: boolean; limit: number; remaining: number; retryAfterSec?: number } | null = null
     if (limiter) {
-      const rl = limiter.check(clientIp, path)
+      rl = limiter.check(clientIp, path)
       if (!rl.allowed) {
         return jsonResponse(429, 'Too many requests', {
           'retry-after': String(rl.retryAfterSec ?? 60),
@@ -127,18 +129,14 @@ export function createProxy(config: ProxyConfig) {
     }
 
     // 5. CSRF — mutating requests must come from same origin
-    if (csrf && request.method !== 'GET' && request.method !== 'HEAD') {
+    if (csrf && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
       const origin = request.headers.get('origin')
       const host = request.headers.get('host')
-      if (origin && host) {
-        try {
-          const originHost = new URL(origin).host
-          if (originHost !== host) {
-            return jsonResponse(403, 'Forbidden')
-          }
-        } catch {
-          return jsonResponse(403, 'Forbidden')
-        }
+      if (!origin) {
+        return jsonResponse(403, 'CSRF: Origin header required')
+      }
+      if (host && !origin.includes(host)) {
+        return jsonResponse(403, 'CSRF: Origin mismatch')
       }
     }
 
@@ -161,6 +159,9 @@ export function createProxy(config: ProxyConfig) {
       if (contentLength && parseInt(contentLength) > maxBodySize) {
         return jsonResponse(413, 'Request too large')
       }
+      // NOTE: When no Content-Length header is present (e.g. chunked transfer encoding),
+      // the body size check above is bypassed. The backend server MUST enforce its own
+      // body size limits to prevent abuse via chunked requests.
       body = request.body
     }
 
@@ -182,9 +183,8 @@ export function createProxy(config: ProxyConfig) {
     const responseHeaders = new Headers()
     responseHeaders.set('content-type', apiRes.headers.get('content-type') || 'application/json')
 
-    // Rate limit info
-    if (limiter) {
-      const rl = limiter.check(clientIp, path)
+    // Rate limit info (reuse the already-counted check from above — no second call)
+    if (rl) {
       responseHeaders.set('x-ratelimit-limit', String(rl.limit))
       responseHeaders.set('x-ratelimit-remaining', String(rl.remaining))
     }

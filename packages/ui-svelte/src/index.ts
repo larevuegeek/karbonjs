@@ -1,8 +1,10 @@
 // button
 export { default as Button } from './button/Button.svelte'
+export { default as ButtonBrand } from './button/ButtonBrand.svelte'
 
 // form
-export { default as FormInput } from './form/FormInput.svelte'
+export { default as Input } from './form/Input.svelte'
+export { default as FormInput } from './form/Input.svelte' // alias retro-compat
 export { default as Select } from './form/Select.svelte'
 export { default as Checkbox } from './form/Checkbox.svelte'
 export { default as Toggle } from './form/Toggle.svelte'
@@ -30,8 +32,12 @@ export { default as PageHeader } from './layout/PageHeader.svelte'
 export { default as EmptyState } from './layout/EmptyState.svelte'
 
 // image
+// code
+export { default as CodeBlock } from './code/CodeBlock.svelte'
+
 export { default as Image } from './image/Image.svelte'
 export { default as ImgZoom } from './image/ImgZoom.svelte'
+export { default as ImageCompare } from './image/ImageCompare.svelte'
 
 // carousel
 export { default as Carousel } from './carousel/Carousel.svelte'

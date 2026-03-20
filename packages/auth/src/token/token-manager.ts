@@ -17,6 +17,11 @@ export interface TokenManagerConfig {
   onExpired?: () => void
 }
 
+function isValidJwt(token: string): boolean {
+  const parts = token.split('.')
+  return parts.length === 3 && parts.every(p => p.length > 0)
+}
+
 /**
  * Server-side token refresh manager.
  * Handles refresh token exchange and deduplication.
@@ -45,7 +50,7 @@ export function createTokenManager(config: TokenManagerConfig) {
       }
 
       const data = await res.json()
-      if (!data.token || !data.refresh_token) {
+      if (!data.token || !data.refresh_token || !isValidJwt(data.token)) {
         config.onExpired?.()
         return null
       }

@@ -2,11 +2,27 @@
   import { onMount, tick } from 'svelte'
   import type { MediaProvider, MediaFile, EditorTheme } from '@karbonjs/ui-core'
 
+  interface EditorToken {
+    id: string
+    label: string
+    icon?: string
+    group?: string
+    template?: string
+    render?: (data?: any) => string
+  }
+
+  type ToolbarItem = string
+  type ToolbarGroup = ToolbarItem[]
+  type ToolbarConfig = ToolbarGroup[] | 'minimal' | 'standard' | 'full'
+
   interface Props {
     value: string
     placeholder?: string
     media?: MediaProvider
     theme?: EditorTheme
+    toolbar?: ToolbarConfig
+    toolbarMode?: 'fixed' | 'floating' | 'bottom'
+    tokens?: EditorToken[]
     class?: string
   }
 
@@ -15,8 +31,220 @@
     placeholder = 'Rédigez votre contenu...',
     media,
     theme = 'default',
+    toolbar = 'standard',
+    toolbarMode = 'fixed',
+    tokens = [],
     class: className = ''
   }: Props = $props()
+
+  // ── Toolbar presets ──
+  const toolbarPresets: Record<string, ToolbarGroup[]> = {
+    minimal: [
+      ['bold', 'italic', 'underline'],
+      ['link'],
+    ],
+    standard: [
+      ['bold', 'italic', 'underline', 'strikethrough'],
+      ['h2', 'h3', 'h4'],
+      ['bulletList', 'orderedList', 'blockquote'],
+      ['link', 'image'],
+      ['code', 'hr'],
+      ['source'],
+    ],
+    full: [
+      ['bold', 'italic', 'underline', 'strikethrough'],
+      ['h2', 'h3', 'h4'],
+      ['bulletList', 'orderedList', 'blockquote'],
+      ['alignLeft', 'alignCenter', 'alignRight'],
+      ['link', 'image', 'video', 'table'],
+      ['code', 'hr', 'color'],
+      ['clearFormat', 'source', 'fullscreen'],
+    ],
+  }
+
+  const resolvedToolbar = $derived<ToolbarGroup[]>(
+    typeof toolbar === 'string' ? (toolbarPresets[toolbar] ?? toolbarPresets.standard) : toolbar
+  )
+
+  // ── Toolbar helpers ──
+  const flatToolbar = $derived(resolvedToolbar.flat())
+  function hasBtn(id: string): boolean { return flatToolbar.includes(id) }
+  function isGroupVisible(ids: string[]): boolean { return ids.some(id => flatToolbar.includes(id)) }
+
+  // ── Token picker state ──
+  let showTokenPicker = $state(false)
+  let tokenFilter = $state('')
+
+  // Group tokens by category
+  const tokenGroups = $derived.by(() => {
+    const groups: string[] = []
+    for (const t of tokens) {
+      if (t.group && !groups.includes(t.group)) groups.push(t.group)
+    }
+    return groups
+  })
+
+  const filteredTokens = $derived(
+    tokenFilter ? tokens.filter(t => t.group === tokenFilter) : tokens
+  )
+
+  // ── Block editor state ──
+  let selectedBlock = $state<HTMLElement | null>(null)
+  let blockEditorPos = $state({ x: 0, y: 0 })
+  let showBlockEditor = $state(false)
+  let blockCols = $state('2')
+  let blockGap = $state('16')
+  let blockPad = $state('16')
+  let blockRadius = $state('8')
+  let blockBg = $state('')
+
+  function handleEditorClick(e: MouseEvent) {
+    // Find closest data-token element
+    const target = e.target as HTMLElement
+    const block = target.closest('[data-token]') as HTMLElement | null
+
+    if (block && editor?.contains(block)) {
+      selectedBlock = block
+      // Read current styles
+      const style = block.style
+      blockCols = (style.gridTemplateColumns?.match(/repeat\((\d+)/)?.[1]) || style.gridTemplateColumns?.split(/\s+1fr/).length?.toString() || '2'
+      blockGap = parseInt(style.gap || '16').toString()
+      blockPad = parseInt(style.padding || '16').toString()
+      blockRadius = parseInt(style.borderRadius || '8').toString()
+      blockBg = style.background || ''
+
+      // Position the editor above the block
+      const rect = block.getBoundingClientRect()
+      blockEditorPos = { x: rect.left, y: rect.top - 44 }
+      showBlockEditor = true
+
+      // Visual selection
+      block.style.outline = '2px solid var(--karbon-primary)'
+      block.style.outlineOffset = '2px'
+    } else {
+      deselectBlock()
+    }
+  }
+
+  function deselectBlock() {
+    if (selectedBlock) {
+      selectedBlock.style.outline = ''
+      selectedBlock.style.outlineOffset = ''
+    }
+    selectedBlock = null
+    showBlockEditor = false
+  }
+
+  function updateBlockCols(cols: string) {
+    if (!selectedBlock) return
+    blockCols = cols
+    if (selectedBlock.style.display === 'grid' || selectedBlock.style.gridTemplateColumns) {
+      selectedBlock.style.gridTemplateColumns = `repeat(${cols}, 1fr)`
+      // Adjust children count
+      const childCount = selectedBlock.children.length
+      const targetCount = parseInt(cols)
+      if (childCount < targetCount) {
+        for (let i = childCount; i < targetCount; i++) {
+          const div = document.createElement('div')
+          div.style.cssText = 'padding:16px;border:1px dashed var(--karbon-border);border-radius:8px;min-height:60px;'
+          div.innerHTML = '<p>Nouvelle colonne</p>'
+          selectedBlock.appendChild(div)
+        }
+      }
+    }
+    syncValue()
+  }
+
+  function updateBlockGap(gap: string) {
+    if (!selectedBlock) return
+    blockGap = gap
+    selectedBlock.style.gap = gap + 'px'
+    syncValue()
+  }
+
+  function updateBlockPad(pad: string) {
+    if (!selectedBlock) return
+    blockPad = pad
+    // Apply padding to children if grid, or to block itself
+    if (selectedBlock.style.display === 'grid') {
+      Array.from(selectedBlock.children).forEach((child) => {
+        (child as HTMLElement).style.padding = pad + 'px'
+      })
+    } else {
+      selectedBlock.style.padding = pad + 'px'
+    }
+    syncValue()
+  }
+
+  function updateBlockRadius(radius: string) {
+    if (!selectedBlock) return
+    blockRadius = radius
+    selectedBlock.style.borderRadius = radius + 'px'
+    // Also update children
+    Array.from(selectedBlock.children).forEach((child) => {
+      (child as HTMLElement).style.borderRadius = radius + 'px'
+    })
+    syncValue()
+  }
+
+  function deleteBlock() {
+    if (!selectedBlock) return
+    selectedBlock.remove()
+    deselectBlock()
+    syncValue()
+  }
+
+  function duplicateBlock() {
+    if (!selectedBlock) return
+    const clone = selectedBlock.cloneNode(true) as HTMLElement
+    selectedBlock.after(clone)
+    deselectBlock()
+    syncValue()
+  }
+
+  // Close block editor on outside click
+  function handleGlobalClick() {
+    if (showTokenPicker) showTokenPicker = false
+  }
+
+  function insertToken(token: EditorToken) {
+    if (!editor) return
+    editor.focus()
+    let html = ''
+    if (token.template) {
+      html = token.template
+    } else if (token.render) {
+      html = token.render()
+    } else {
+      html = `<div data-token="${token.id}" contenteditable="false" style="padding:12px;margin:8px 0;border:1px dashed var(--karbon-border);border-radius:8px;background:var(--karbon-bg-2);cursor:pointer;">
+        <span style="font-size:11px;font-weight:600;color:var(--karbon-text-3);">${token.icon ? token.icon + ' ' : ''}${token.label}</span>
+      </div>`
+    }
+    document.execCommand('insertHTML', false, html)
+    syncValue()
+    showTokenPicker = false
+  }
+
+  // ── Floating toolbar state ──
+  let floatingPos = $state({ x: 0, y: 0 })
+  let showFloating = $state(false)
+
+  function updateFloatingToolbar() {
+    if (toolbarMode !== 'floating') return
+    const sel = window.getSelection()
+    if (!sel || sel.isCollapsed || !sel.rangeCount) {
+      showFloating = false
+      return
+    }
+    const range = sel.getRangeAt(0)
+    const rect = range.getBoundingClientRect()
+    // Position relative to viewport, use fixed positioning
+    floatingPos = {
+      x: rect.left + rect.width / 2,
+      y: rect.top - 52,
+    }
+    showFloating = true
+  }
 
   // ── DOM refs ──
   let editor = $state<HTMLDivElement>(undefined!)
@@ -189,8 +417,10 @@
         if (parts.length) el.setAttribute('style', parts.join(';')); else el.removeAttribute('style')
       }
     })
-    div.querySelectorAll('script, style, meta, link').forEach(el => el.remove())
-    return div.innerHTML
+    div.querySelectorAll('script, style, meta, link, iframe, object, embed, form, base').forEach(el => el.remove())
+    let str = div.innerHTML
+    str = str.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
+    return str
   }
 
   function exec(command: string, val: string | undefined = undefined) {
@@ -401,6 +631,15 @@
   // ── Embed ──
   function openEmbedModal() { saveSelection(); embedUrl = ''; showEmbedModal = true }
 
+  function isSafeUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url)
+      return ['http:', 'https:'].includes(parsed.protocol)
+    } catch {
+      return false
+    }
+  }
+
   function insertEmbed() {
     showEmbedModal = false; if (!embedUrl) return
     restoreSelection(); editor.focus()
@@ -408,6 +647,7 @@
     if (match) { exec('insertHTML', `<div class="embed-responsive"><iframe src="https://www.youtube.com/embed/${escAttr(match[1])}" frameborder="0" allowfullscreen loading="lazy"></iframe></div><p><br></p>`); value = editor.innerHTML; return }
     match = embedUrl.match(/vimeo\.com\/(\d+)/)
     if (match) { exec('insertHTML', `<div class="embed-responsive"><iframe src="https://player.vimeo.com/video/${escAttr(match[1])}" frameborder="0" allowfullscreen loading="lazy"></iframe></div><p><br></p>`); value = editor.innerHTML; return }
+    if (!isSafeUrl(embedUrl)) return
     exec('insertHTML', `<div class="embed-responsive"><iframe src="${escAttr(embedUrl)}" frameborder="0" loading="lazy"></iframe></div><p><br></p>`)
     value = editor.innerHTML
   }
@@ -425,7 +665,18 @@
   }
 
   function replaceNext() { const sel = window.getSelection(); if (sel?.toString().toLowerCase() === findText.toLowerCase()) exec('insertText', replaceText); findNext() }
-  function replaceAll() { if (!findText) return; editor.innerHTML = editor.innerHTML.replaceAll(findText, replaceText); value = editor.innerHTML }
+  function replaceAll() {
+    if (!findText || !editor) return
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT)
+    const nodes: Text[] = []
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text)
+    for (const node of nodes) {
+      if (node.textContent?.includes(findText)) {
+        node.textContent = node.textContent.replaceAll(findText, replaceText)
+      }
+    }
+    value = editor.innerHTML
+  }
 
   // ── Element properties ──
   function openElementProps(el?: HTMLElement) {
@@ -491,7 +742,7 @@
 <div role="toolbar" aria-label="Éditeur de texte riche" class="rte-wrapper {fullscreen ? 'fixed inset-0 z-40 rounded-none flex flex-col' : ''} {className}">
 
   <!-- ═══ TOOLBAR ═══ -->
-  <div class="rte-toolbar">
+  <div class="rte-toolbar" style="{toolbarMode === 'floating' ? 'display:none;' : ''}{toolbarMode === 'bottom' ? 'order:2;' : ''}">
     <button type="button" onclick={() => exec('undo')} class="rte-btn" title="Annuler (Ctrl+Z)" aria-label="Annuler">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
     </button>
@@ -606,6 +857,67 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
     </button>
 
+    <!-- ═══ TOKEN PICKER ═══ -->
+    {#if tokens.length > 0}
+      <span class="rte-sep"></span>
+      <div style="position:relative;display:inline-flex;">
+        <button type="button" onclick={(e) => { e.stopPropagation(); showTokenPicker = !showTokenPicker }} class="rte-btn" title="Inserer un bloc" aria-label="Inserer un bloc" style="gap:4px;padding:0 8px;{showTokenPicker ? 'background:rgba(139,92,246,0.15);color:#a78bfa;' : ''}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+          <span style="font-size:11px;font-weight:600;">Bloc</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;margin-left:2px;transition:transform 0.15s;{showTokenPicker ? 'transform:rotate(180deg);' : ''}"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        {#if showTokenPicker}
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <div
+            onclick={(e) => e.stopPropagation()}
+            style="position:absolute;top:100%;right:0;z-index:60;margin-top:6px;width:340px;
+              background:var(--karbon-bg-card);border:1px solid var(--karbon-border);
+              border-radius:0.75rem;box-shadow:0 12px 48px rgba(0,0,0,0.35);
+              overflow:hidden;animation:karbon-token-slide 0.15s ease;"
+          >
+            <!-- Header + filter tabs -->
+            <div style="padding:8px 10px;border-bottom:1px solid var(--karbon-border);">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--karbon-text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>
+                <span style="font-size:12px;font-weight:600;color:var(--karbon-text);flex:1;">Blocs</span>
+                <button type="button" onclick={() => showTokenPicker = false} style="background:none;border:none;color:var(--karbon-text-4);cursor:pointer;padding:3px;border-radius:6px;display:flex;transition:all 0.1s;" aria-label="Fermer"
+                  onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--karbon-nav-hover-bg)'; (e.currentTarget as HTMLElement).style.color = 'var(--karbon-text-2)' }}
+                  onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--karbon-text-4)' }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              {#if tokenGroups.length > 1}
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                  <button type="button" onclick={() => tokenFilter = ''} style="padding:3px 8px;border-radius:6px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.1s;background:{!tokenFilter ? 'var(--karbon-primary)' : 'var(--karbon-bg-2)'};color:{!tokenFilter ? 'white' : 'var(--karbon-text-3)'};">Tout</button>
+                  {#each tokenGroups as group}
+                    <button type="button" onclick={() => tokenFilter = group} style="padding:3px 8px;border-radius:6px;border:none;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.1s;background:{tokenFilter === group ? 'var(--karbon-primary)' : 'var(--karbon-bg-2)'};color:{tokenFilter === group ? 'white' : 'var(--karbon-text-3)'};">{group}</button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+            <!-- Grid of tokens -->
+            <div style="padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:350px;overflow-y:auto;">
+              {#each filteredTokens as token}
+                <button
+                  type="button"
+                  onclick={() => insertToken(token)}
+                  style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:1px solid var(--karbon-border);background:var(--karbon-bg-2);color:var(--karbon-text);border-radius:10px;cursor:pointer;transition:all 0.15s ease;text-align:center;"
+                  onmouseenter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--karbon-primary)'; el.style.background = 'color-mix(in srgb, var(--karbon-primary) 8%, transparent)'; el.style.transform = 'translateY(-1px)' }}
+                  onmouseleave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--karbon-border)'; el.style.background = 'var(--karbon-bg-2)'; el.style.transform = 'translateY(0)' }}
+                >
+                  <span style="font-size:22px;height:28px;display:flex;align-items:center;">{token.icon || '📦'}</span>
+                  <span style="font-size:11px;font-weight:600;line-height:1.2;">{token.label}</span>
+                  {#if token.group}<span style="font-size:9px;color:var(--karbon-text-4);margin-top:-2px;">{token.group}</span>{/if}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
     <div class="flex-1"></div>
 
     <button type="button" onclick={() => showFindReplace = !showFindReplace} class="{showFindReplace ? 'rte-btn rte-btn-active' : 'rte-btn'}" title="Rechercher (Ctrl+H)" aria-label="Rechercher et remplacer">
@@ -637,6 +949,110 @@
     </div>
   {/if}
 
+  <!-- Token picker moved into toolbar above -->
+
+  <!-- ═══ FLOATING TOOLBAR ═══ -->
+  {#if toolbarMode === 'floating' && showFloating}
+    <div
+      style="position:fixed;left:{floatingPos.x}px;top:{floatingPos.y}px;transform:translateX(-50%);z-index:9999;
+        display:flex;align-items:center;gap:1px;padding:3px 6px;
+        background:var(--karbon-bg-card);border:1px solid var(--karbon-border);
+        border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.35);
+        backdrop-filter:blur(12px);animation:karbon-float-in 0.15s ease;"
+    >
+      <button type="button" onclick={() => exec('bold')} class={isActive('bold')} title="Gras" aria-label="Gras"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
+      <button type="button" onclick={() => exec('italic')} class={isActive('italic')} title="Italique" aria-label="Italique"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button>
+      <button type="button" onclick={() => exec('underline')} class={isActive('underline')} title="Souligne" aria-label="Souligne"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" x2="20" y1="20" y2="20"/></svg></button>
+      <button type="button" onclick={() => exec('strikeThrough')} class={isActive('strikeThrough')} title="Barre" aria-label="Barre"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" x2="20" y1="12" y2="12"/></svg></button>
+      <span style="width:1px;height:14px;background:var(--karbon-border);margin:0 3px;"></span>
+      <button type="button" onclick={() => exec('formatBlock', 'h2')} class="{isActive('h2')} rte-btn" title="H2" aria-label="Titre 2" style="font-size:11px;font-weight:700;padding:0 4px;">H2</button>
+      <button type="button" onclick={() => exec('formatBlock', 'h3')} class="{isActive('h3')} rte-btn" title="H3" aria-label="Titre 3" style="font-size:11px;font-weight:700;padding:0 4px;">H3</button>
+      <span style="width:1px;height:14px;background:var(--karbon-border);margin:0 3px;"></span>
+      <button type="button" onclick={() => exec('insertUnorderedList')} class="rte-btn" title="Puces" aria-label="Liste"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg></button>
+      <button type="button" onclick={openLinkModal} class="rte-btn" title="Lien" aria-label="Lien"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+      <button type="button" onclick={() => exec('formatBlock', 'blockquote')} class="rte-btn" title="Citation" aria-label="Citation"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 .001 0 .002.002.003A.003.003 0 0 0 15 21z"/></svg></button>
+      <!-- Arrow pointing down to show it's attached to the selection -->
+      <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--karbon-bg-card);"></div>
+    </div>
+  {/if}
+
+  <!-- ═══ BLOCK EDITOR PANEL ═══ -->
+  {#if showBlockEditor && selectedBlock}
+    <div
+      style="position:fixed;left:{blockEditorPos.x}px;top:{blockEditorPos.y}px;z-index:9998;
+        display:flex;align-items:center;gap:3px;padding:4px 8px;
+        background:var(--karbon-bg-card);border:1px solid var(--karbon-border);
+        border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.35);
+        backdrop-filter:blur(12px);animation:karbon-float-in 0.15s ease;
+        font-size:11px;color:var(--karbon-text-2);"
+    >
+      <!-- Columns -->
+      {#if selectedBlock.style.gridTemplateColumns}
+        <span style="font-weight:600;color:var(--karbon-text-3);margin-right:2px;">Col</span>
+        {#each ['1','2','3','4','5','6'] as n}
+          <button type="button" onclick={() => updateBlockCols(n)}
+            style="width:22px;height:22px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;transition:all 0.1s;
+              background:{blockCols === n ? 'var(--karbon-primary)' : 'var(--karbon-bg-2)'};
+              color:{blockCols === n ? 'white' : 'var(--karbon-text-3)'};"
+          >{n}</button>
+        {/each}
+        <span style="width:1px;height:16px;background:var(--karbon-border);margin:0 4px;"></span>
+      {/if}
+
+      <!-- Gap -->
+      <span style="font-weight:600;color:var(--karbon-text-3);">Gap</span>
+      <input type="range" min="0" max="32" step="4" bind:value={blockGap}
+        oninput={() => updateBlockGap(blockGap)}
+        style="width:50px;height:14px;cursor:pointer;accent-color:var(--karbon-primary);"
+      />
+      <span style="font-size:10px;min-width:20px;">{blockGap}</span>
+
+      <span style="width:1px;height:16px;background:var(--karbon-border);margin:0 4px;"></span>
+
+      <!-- Padding -->
+      <span style="font-weight:600;color:var(--karbon-text-3);">Pad</span>
+      <input type="range" min="0" max="48" step="4" bind:value={blockPad}
+        oninput={() => updateBlockPad(blockPad)}
+        style="width:50px;height:14px;cursor:pointer;accent-color:var(--karbon-primary);"
+      />
+      <span style="font-size:10px;min-width:20px;">{blockPad}</span>
+
+      <span style="width:1px;height:16px;background:var(--karbon-border);margin:0 4px;"></span>
+
+      <!-- Border radius -->
+      <span style="font-weight:600;color:var(--karbon-text-3);">↺</span>
+      <input type="range" min="0" max="24" step="2" bind:value={blockRadius}
+        oninput={() => updateBlockRadius(blockRadius)}
+        style="width:40px;height:14px;cursor:pointer;accent-color:var(--karbon-primary);"
+      />
+
+      <span style="width:1px;height:16px;background:var(--karbon-border);margin:0 4px;"></span>
+
+      <!-- Actions -->
+      <button type="button" onclick={duplicateBlock} title="Dupliquer" aria-label="Dupliquer le bloc"
+        style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:none;background:var(--karbon-bg-2);color:var(--karbon-text-3);cursor:pointer;transition:all 0.1s;"
+        onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--karbon-primary) 15%, transparent)'; (e.currentTarget as HTMLElement).style.color = 'var(--karbon-primary)' }}
+        onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--karbon-bg-2)'; (e.currentTarget as HTMLElement).style.color = 'var(--karbon-text-3)' }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      </button>
+      <button type="button" onclick={deleteBlock} title="Supprimer" aria-label="Supprimer le bloc"
+        style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:none;background:var(--karbon-bg-2);color:var(--karbon-text-3);cursor:pointer;transition:all 0.1s;"
+        onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--karbon-red-500) 15%, transparent)'; (e.currentTarget as HTMLElement).style.color = 'var(--karbon-red-400)' }}
+        onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--karbon-bg-2)'; (e.currentTarget as HTMLElement).style.color = 'var(--karbon-text-3)' }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+      </button>
+      <button type="button" onclick={deselectBlock} title="Fermer" aria-label="Fermer"
+        style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:none;background:var(--karbon-bg-2);color:var(--karbon-text-3);cursor:pointer;transition:all 0.1s;"
+        onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--karbon-text-2)' }}
+        onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--karbon-text-3)' }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  {/if}
+
   <!-- ═══ EDITOR / SOURCE ═══ -->
   {#if sourceMode}
     <div class="rte-source-wrapper {fullscreen ? 'flex-1' : ''}" style="{fullscreen ? '' : 'height: 500px;'}">
@@ -652,8 +1068,9 @@
       style="{fullscreen ? '' : 'min-height: 500px; max-height: 800px; overflow-y: auto;'}"
       data-placeholder={placeholder} role="textbox" aria-multiline="true"
       oninput={handleInput} onkeydown={handleKeydown} onkeyup={updateActiveFormats}
-      onmouseup={updateActiveFormats} onpaste={handlePaste}
+      onmouseup={() => { updateActiveFormats(); updateFloatingToolbar() }} onpaste={handlePaste}
       oncontextmenu={handleContextMenu} ondblclick={handleDblClick}
+      onclick={handleEditorClick}
     ></div>
   {/if}
 
@@ -1075,7 +1492,7 @@
      WRAPPER
      ═══════════════════════════════════════════════ */
   .rte-wrapper {
-    @apply rounded-xl shadow-sm overflow-hidden;
+    border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden;
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-card);
   }
@@ -1084,13 +1501,13 @@
      TOOLBAR
      ═══════════════════════════════════════════════ */
   .rte-toolbar {
-    @apply flex flex-wrap items-center gap-1 px-3 py-2 select-none;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; padding: 0.75rem 0.5rem; user-select: none;
     border-bottom: 1px solid var(--karbon-border);
     background: color-mix(in srgb, var(--karbon-bg-2) 50%, transparent);
   }
 
   .rte-btn {
-    @apply flex items-center justify-center rounded-md transition-all cursor-pointer border-none bg-transparent px-1;
+    display: flex; align-items: center; justify-content: center; border-radius: 0.375rem; transition: all 0.15s ease; cursor: pointer; border: none; background: transparent; padding: 0 0.25rem;
     min-width: 32px;
     height: 32px;
     color: var(--karbon-text-3);
@@ -1102,22 +1519,29 @@
   }
 
   .rte-btn-active {
-    @apply bg-violet-500/15 text-violet-400;
+    background: rgba(139,92,246,0.15); color: #a78bfa;
   }
 
   .rte-btn-active:hover {
-    @apply bg-violet-500/20 text-violet-400;
+    background: rgba(139,92,246,0.2); color: #a78bfa;
   }
 
   .rte-sep {
-    @apply mx-0.5 shrink-0;
+    margin: 0 0.125rem; flex-shrink: 0;
     width: 1px;
     height: 22px;
     background: var(--karbon-border);
   }
 
   .rte-select {
-    @apply rounded-[5px] px-1 py-0.5 text-[0.6875rem] outline-none cursor-pointer;
+    font-size: 0.6875rem;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
     background: var(--karbon-bg-input);
     border: 1px solid var(--karbon-border-input);
     color: var(--karbon-text-3);
@@ -1127,13 +1551,26 @@
      FIND/REPLACE BAR
      ═══════════════════════════════════════════════ */
   .rte-findbar {
-    @apply flex items-center gap-2 px-4 py-2;
+    align-items: center;
+    gap: 0.5rem;
+    display: flex;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--karbon-border);
     background: color-mix(in srgb, var(--karbon-bg-2) 30%, transparent);
   }
 
   .rte-bar-input {
-    @apply rounded-md px-2 py-1 text-xs outline-none;
+    outline: none;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     background: var(--karbon-bg-input);
     border: 1px solid var(--karbon-border-input);
     color: var(--karbon-text);
@@ -1144,7 +1581,14 @@
   }
 
   .rte-bar-btn {
-    @apply rounded-md px-2.5 py-1 text-[0.6875rem] cursor-pointer transition-all;
+    font-size: 0.6875rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 0.375rem;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     background: var(--karbon-bg-2);
     border: 1px solid var(--karbon-border);
     color: var(--karbon-text-3);
@@ -1159,7 +1603,14 @@
      STATUS BAR
      ═══════════════════════════════════════════════ */
   .rte-statusbar {
-    @apply flex items-center gap-4 px-4 py-1.5 text-[11px];
+    font-size: 11px;
+    align-items: center;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    gap: 1rem;
+    display: flex;
+    padding-left: 1rem;
+    padding-right: 1rem;
     border-top: 1px solid var(--karbon-border);
     background: color-mix(in srgb, var(--karbon-bg-2) 30%, transparent);
     color: var(--karbon-text-4);
@@ -1181,52 +1632,99 @@
     pointer-events: none;
   }
 
-  .rte-content :global(h2) { @apply text-2xl font-bold mt-4 mb-2; }
-  .rte-content :global(h3) { @apply text-xl font-semibold mt-3 mb-1.5; }
-  .rte-content :global(h4) { @apply text-lg font-semibold mt-2.5 mb-1; }
-  .rte-content :global(p) { @apply my-2; }
-  .rte-content :global(a) { @apply text-violet-500 underline; }
+  .rte-content :global(h2) { font-size: 1.5rem; font-weight: 700; margin-top: 1rem; margin-bottom: 0.5rem; }
+  .rte-content :global(h3) { font-size: 1.25rem; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.375rem; }
+  .rte-content :global(h4) { font-size: 1.125rem; font-weight: 600; margin-top: 0.625rem; margin-bottom: 0.25rem; }
+  .rte-content :global(p) { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+  .rte-content :global(a) { color: #8b5cf6; text-decoration: underline; }
   .rte-content :global(blockquote) {
-    @apply border-l-[3px] border-violet-500 pl-4 py-2 my-4 rounded-r-lg italic;
+    border-color: #8b5cf6;
+    border-left: 3px solid;
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-style: italic;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     background: rgba(139, 92, 246, 0.05);
   }
   .rte-content :global(pre) {
-    @apply rounded-lg p-4 font-mono text-sm overflow-x-auto my-4;
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
     background: var(--karbon-bg-2);
     border: 1px solid var(--karbon-border);
   }
   .rte-content :global(code) {
-    @apply px-1.5 py-0.5 rounded text-sm;
+    border-radius: 0.25rem;
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     background: var(--karbon-bg-2);
   }
   .rte-content :global(img) {
-    @apply max-w-full h-auto rounded-lg my-4 cursor-pointer;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    max-width: 100%;
+    height: auto;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
   }
   .rte-content :global(img):hover {
-    @apply outline outline-2 outline-violet-500/50 outline-offset-2;
+    outline: 2px solid rgba(139,92,246,0.5);
+    outline-offset: 2px;
   }
   .rte-content :global(hr) {
-    @apply border-none my-6;
+    border: none;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
     border-top: 1px solid var(--karbon-border);
   }
-  .rte-content :global(ul), .rte-content :global(ol) { @apply pl-6 my-2; }
-  .rte-content :global(li) { @apply my-1; }
-  .rte-content :global(table) { @apply w-full border-collapse my-4; }
+  .rte-content :global(ul), .rte-content :global(ol) { padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+  .rte-content :global(li) { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+  .rte-content :global(table) { width: 100%; border-collapse: collapse; margin-top: 1rem; margin-bottom: 1rem; }
   .rte-content :global(th) {
-    @apply px-3 py-2 font-semibold text-sm;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-2);
   }
   .rte-content :global(td) {
-    @apply px-3 py-2;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border: 1px solid var(--karbon-border);
   }
   .rte-content :global(.embed-responsive) {
-    @apply relative h-0 overflow-hidden my-4 rounded-lg;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    position: relative;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    height: 0;
     padding-bottom: 56.25%;
   }
   .rte-content :global(.embed-responsive iframe) {
-    @apply absolute inset-0 w-full h-full border-0;
+    position: absolute;
+    border: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
   /* ═══════════════════════════════════════════════
@@ -1237,13 +1735,13 @@
     padding: 2rem 2.5rem;
   }
 
-  .rte-prose :global(h2) { @apply text-3xl font-bold mt-8 mb-3; }
-  .rte-prose :global(h3) { @apply text-2xl font-semibold mt-6 mb-2; }
-  .rte-prose :global(h4) { @apply text-xl font-semibold mt-4 mb-1.5; }
-  .rte-prose :global(p) { @apply my-4; }
-  .rte-prose :global(blockquote) { @apply pl-6 py-3 my-6; }
-  .rte-prose :global(img) { @apply my-6; }
-  .rte-prose :global(hr) { @apply my-10; }
+  .rte-prose :global(h2) { font-size: 1.875rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; }
+  .rte-prose :global(h3) { font-size: 1.5rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+  .rte-prose :global(h4) { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.375rem; }
+  .rte-prose :global(p) { margin-top: 1rem; margin-bottom: 1rem; }
+  .rte-prose :global(blockquote) { padding-left: 1.5rem; padding-top: 0.75rem; padding-bottom: 0.75rem; margin-top: 1.5rem; margin-bottom: 1.5rem; }
+  .rte-prose :global(img) { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+  .rte-prose :global(hr) { margin-top: 2.5rem; margin-bottom: 2.5rem; }
 
   /* ═══════════════════════════════════════════════
      CONTENT — Compact theme (admin/dashboard)
@@ -1254,13 +1752,13 @@
     line-height: 1.6;
   }
 
-  .rte-compact :global(h2) { @apply text-lg font-semibold mt-2 mb-1; }
-  .rte-compact :global(h3) { @apply text-base font-semibold mt-1.5 mb-0.5; }
-  .rte-compact :global(h4) { @apply text-sm font-semibold mt-1 mb-0.5; }
-  .rte-compact :global(p) { @apply my-1; }
-  .rte-compact :global(blockquote) { @apply pl-3 py-1 my-2; }
-  .rte-compact :global(img) { @apply my-2 rounded-md; }
-  .rte-compact :global(hr) { @apply my-3; }
+  .rte-compact :global(h2) { font-size: 1.125rem; font-weight: 600; margin-top: 0.5rem; margin-bottom: 0.25rem; }
+  .rte-compact :global(h3) { font-size: 1rem; font-weight: 600; margin-top: 0.375rem; margin-bottom: 0.125rem; }
+  .rte-compact :global(h4) { font-size: 0.875rem; font-weight: 600; margin-top: 0.25rem; margin-bottom: 0.125rem; }
+  .rte-compact :global(p) { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+  .rte-compact :global(blockquote) { padding-left: 0.75rem; padding-top: 0.25rem; padding-bottom: 0.25rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+  .rte-compact :global(img) { margin-top: 0.5rem; margin-bottom: 0.5rem; border-radius: 0.375rem; }
+  .rte-compact :global(hr) { margin-top: 0.75rem; margin-bottom: 0.75rem; }
 
   /* ═══════════════════════════════════════════════
      CONTENT — Minimal theme (neutral)
@@ -1271,24 +1769,32 @@
     line-height: 1.7;
   }
 
-  .rte-minimal :global(h2) { @apply text-xl font-semibold mt-3 mb-1.5; }
-  .rte-minimal :global(h3) { @apply text-lg font-medium mt-2 mb-1; }
-  .rte-minimal :global(h4) { @apply text-base font-medium mt-1.5 mb-0.5; }
-  .rte-minimal :global(a) { @apply text-blue-500 underline; }
+  .rte-minimal :global(h2) { font-size: 1.25rem; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.375rem; }
+  .rte-minimal :global(h3) { font-size: 1.125rem; font-weight: 500; margin-top: 0.5rem; margin-bottom: 0.25rem; }
+  .rte-minimal :global(h4) { font-size: 1rem; font-weight: 500; margin-top: 0.375rem; margin-bottom: 0.125rem; }
+  .rte-minimal :global(a) { color: #3b82f6; text-decoration: underline; }
   .rte-minimal :global(blockquote) {
-    @apply border-gray-400 bg-transparent;
+    border-color: #9ca3af;
+    background: transparent;
   }
 
   /* ═══════════════════════════════════════════════
      SOURCE MODE
      ═══════════════════════════════════════════════ */
   .rte-source-wrapper {
-    @apply relative flex overflow-hidden;
+    overflow: hidden;
+    position: relative;
+    display: flex;
     background: #0d1117;
   }
 
   .rte-line-numbers {
-    @apply shrink-0 py-4 text-right select-none overflow-hidden;
+    overflow: hidden;
+    user-select: none;
+    text-align: right;
+    flex-shrink: 0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
     width: 48px;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 0.8125rem;
@@ -1300,7 +1806,14 @@
   .rte-line-numbers :global(div) { padding-right: 12px; }
 
   .rte-highlight-layer {
-    @apply absolute top-0 right-0 bottom-0 p-4 whitespace-pre overflow-hidden pointer-events-none;
+    pointer-events: none;
+    overflow: hidden;
+    white-space: pre;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    top: 0;
+    padding: 1rem;
     left: 48px;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 0.8125rem;
@@ -1309,7 +1822,17 @@
   }
 
   .rte-source-textarea {
-    @apply absolute top-0 right-0 bottom-0 p-4 m-0 border-none outline-none resize-none whitespace-pre overflow-auto;
+    white-space: pre;
+    overflow: auto;
+    outline: none;
+    border: none;
+    resize: none;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    top: 0;
+    padding: 1rem;
+    margin: 0;
     left: 48px;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 0.8125rem;
@@ -1331,20 +1854,48 @@
      CONTEXT MENU
      ═══════════════════════════════════════════════ */
   .ctx-menu {
-    @apply fixed z-[61] w-56 rounded-xl shadow-2xl shadow-black/30 backdrop-blur-xl overflow-hidden;
+    backdrop-filter: blur(24px);
+    overflow: hidden;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    z-index: 61;
+    position: fixed;
+    width: 14rem;
+    /* TODO: shadow-black/30 */
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-card);
   }
 
   .ctx-header {
-    @apply px-3 py-2 text-[11px] font-semibold uppercase tracking-wider;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--karbon-border);
     background: color-mix(in srgb, var(--karbon-bg-2) 50%, transparent);
     color: var(--karbon-text-4);
   }
 
   .ctx-item {
-    @apply flex items-center gap-2 w-full text-left px-3 py-[7px] text-xs bg-transparent border-none cursor-pointer transition-all;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: transparent;
+    align-items: center;
+    border: none;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    width: 100%;
+    gap: 0.5rem;
+    display: flex;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     color: var(--karbon-text-2);
   }
 
@@ -1353,18 +1904,26 @@
     color: var(--karbon-text);
   }
 
-  .ctx-danger { @apply text-red-400; }
-  .ctx-danger:hover { @apply bg-red-500/10 text-red-500; }
-  .ctx-warn { @apply text-amber-400; }
-  .ctx-warn:hover { @apply bg-amber-500/10 text-amber-500; }
+  .ctx-danger { color: #f87171; }
+  .ctx-danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
+  .ctx-warn { color: #fbbf24; }
+  .ctx-warn:hover { background: rgba(245,158,11,0.1); color: #f59e0b; }
 
   .ctx-divider {
-    @apply py-1;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     border-top: 1px solid var(--karbon-border);
   }
 
   .ctx-section-title {
-    @apply px-3 py-1 text-[10px] font-semibold uppercase tracking-wider;
+    letter-spacing: 0.05em;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     color: var(--karbon-text-4);
   }
 
@@ -1372,26 +1931,43 @@
      MODALS
      ═══════════════════════════════════════════════ */
   .rte-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm;
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    inset: 0;
+    position: fixed;
+    display: flex;
+    z-index: 50;
   }
 
   .rte-modal {
-    @apply w-full rounded-xl p-6 shadow-2xl;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    width: 100%;
+    padding: 1.5rem;
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-card);
   }
 
   .rte-modal-header {
-    @apply flex items-center justify-between mb-4;
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+    margin-bottom: 1rem;
   }
 
   .rte-modal-header h3 {
-    @apply text-sm font-semibold;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     color: var(--karbon-text);
   }
 
   .rte-modal-close {
-    @apply cursor-pointer bg-transparent border-none;
+    cursor: pointer;
+    background: transparent;
+    border: none;
     color: var(--karbon-text-4);
   }
 
@@ -1400,11 +1976,24 @@
   }
 
   .rte-modal-footer {
-    @apply mt-5 flex items-center gap-2;
+    align-items: center;
+    gap: 0.5rem;
+    display: flex;
+    margin-top: 1.25rem;
   }
 
   .rte-input {
-    @apply block w-full rounded-lg px-3 py-2 text-sm outline-none transition-colors;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    outline: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    width: 100%;
+    display: block;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border: 1px solid var(--karbon-border-input);
     background: var(--karbon-bg-input);
     color: var(--karbon-text);
@@ -1415,24 +2004,45 @@
   }
 
   .rte-label {
-    @apply block text-xs font-medium;
+    font-weight: 500;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    display: block;
     color: var(--karbon-text-4);
   }
 
   .rte-label-inline {
-    @apply text-sm;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     color: var(--karbon-text-2);
   }
 
   .rte-btn-primary {
-    @apply rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white cursor-pointer;
+    cursor: pointer;
+    background: #7c3aed;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    color: white;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
-  .rte-btn-primary:hover { @apply bg-violet-700; }
-  .rte-btn-primary:disabled { @apply opacity-40 cursor-not-allowed; }
+  .rte-btn-primary:hover { background: #6d28d9; }
+  .rte-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .rte-btn-cancel {
-    @apply rounded-lg px-3 py-1.5 text-xs cursor-pointer;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     border: 1px solid var(--karbon-border);
     color: var(--karbon-text-3);
   }
@@ -1442,13 +2052,26 @@
   }
 
   .rte-btn-danger-text {
-    @apply text-xs text-red-400 cursor-pointer bg-transparent border-none;
+    cursor: pointer;
+    background: transparent;
+    color: #f87171;
+    border: none;
+    font-size: 0.75rem;
+    line-height: 1rem;
   }
 
-  .rte-btn-danger-text:hover { @apply text-red-300; }
+  .rte-btn-danger-text:hover { color: #fca5a5; }
 
   .rte-upload-zone {
-    @apply flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 transition-colors;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    justify-content: center;
+    border-style: dashed;
+    align-items: center;
+    border-radius: 0.5rem;
+    flex-direction: column;
+    border-width: 2px;
+    display: flex;
+    padding: 1rem;
     border-color: var(--karbon-border);
   }
 
@@ -1457,13 +2080,22 @@
   }
 
   .rte-preview-box {
-    @apply rounded-lg overflow-hidden;
+    overflow: hidden;
+    border-radius: 0.5rem;
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-2);
   }
 
   .rte-align-btn {
-    @apply rounded-md px-3 py-1.5 text-xs transition-colors cursor-pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     color: var(--karbon-text-3);
   }
 
@@ -1472,30 +2104,50 @@
   }
 
   .rte-align-btn-active {
-    @apply bg-violet-500/15 text-violet-400 ring-1 ring-violet-500/30;
+    box-shadow: 0 0 0 1px rgba(139,92,246,0.3);
+    background: rgba(139,92,246,0.15);
+    color: #a78bfa;
   }
 
   /* ═══════════════════════════════════════════════
      COLOR PICKER
      ═══════════════════════════════════════════════ */
   .rte-color-grid {
-    @apply absolute left-0 top-full z-20 mt-1 grid grid-cols-8 gap-1 rounded-lg p-2 shadow-xl;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    gap: 0.25rem;
+    display: grid;
+    margin-top: 0.25rem;
+    z-index: 20;
+    padding: 0.5rem;
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-card);
   }
 
   .rte-color-swatch {
-    @apply h-5 w-5 rounded cursor-pointer transition-transform;
+    transition: transform 0.15s ease;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    height: 1.25rem;
+    width: 1.25rem;
     border: 1px solid var(--karbon-border);
   }
 
-  .rte-color-swatch:hover { @apply scale-125; }
+  .rte-color-swatch:hover { transform: scale(1.25); }
 
   /* ═══════════════════════════════════════════════
      MEDIA EXPLORER
      ═══════════════════════════════════════════════ */
   .rte-media-explorer {
-    @apply flex flex-col rounded-2xl shadow-2xl overflow-hidden;
+    overflow: hidden;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    flex-direction: column;
+    display: flex;
     height: 85vh;
     width: 90vw;
     max-width: 64rem;
@@ -1504,24 +2156,55 @@
   }
 
   .rte-media-header {
-    @apply flex items-center gap-3 px-5 py-3;
+    align-items: center;
+    gap: 0.75rem;
+    display: flex;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--karbon-border);
     color: var(--karbon-text);
   }
 
   .rte-media-toolbar {
-    @apply flex items-center gap-2 px-5 py-2;
+    align-items: center;
+    gap: 0.5rem;
+    display: flex;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--karbon-border);
     background: color-mix(in srgb, var(--karbon-bg-2) 50%, transparent);
   }
 
   .rte-media-breadcrumb {
-    @apply flex items-center gap-1 text-xs ml-2;
+    align-items: center;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    gap: 0.25rem;
+    display: flex;
+    margin-left: 0.5rem;
     color: var(--karbon-text-4);
   }
 
   .rte-media-action-btn {
-    @apply flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium cursor-pointer bg-transparent border-none transition-colors;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    cursor: pointer;
+    background: transparent;
+    align-items: center;
+    font-weight: 500;
+    border: none;
+    border-radius: 0.375rem;
+    gap: 0.375rem;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    display: flex;
     color: var(--karbon-text-3);
   }
 
@@ -1530,7 +2213,20 @@
   }
 
   .rte-media-upload-btn {
-    @apply flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-violet-400 cursor-pointer transition-colors;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    color: #a78bfa;
+    cursor: pointer;
+    align-items: center;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    gap: 0.375rem;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    display: flex;
     background: rgba(139, 92, 246, 0.1);
   }
 
@@ -1539,33 +2235,64 @@
   }
 
   .rte-media-view-toggle {
-    @apply flex items-center rounded-lg overflow-hidden;
+    overflow: hidden;
+    align-items: center;
+    border-radius: 0.5rem;
+    display: flex;
     border: 1px solid var(--karbon-border-input);
   }
 
   .rte-media-newfolder {
-    @apply flex items-center gap-2 px-5 py-2;
+    align-items: center;
+    gap: 0.5rem;
+    display: flex;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--karbon-border);
     background: rgba(139, 92, 246, 0.05);
   }
 
   .rte-media-content {
-    @apply relative flex-1 overflow-y-auto p-4;
+    overflow-y: auto;
+    position: relative;
+    flex: 1 1 0%;
+    padding: 1rem;
   }
 
   .rte-media-overlay {
-    @apply absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm;
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    flex-direction: column;
+    inset: 0;
+    display: flex;
+    z-index: 10;
     background: color-mix(in srgb, var(--karbon-bg-card) 80%, transparent);
   }
 
   .rte-media-footer {
-    @apply flex items-center gap-3 px-5 py-3;
+    align-items: center;
+    gap: 0.75rem;
+    display: flex;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
     border-top: 1px solid var(--karbon-border);
     background: color-mix(in srgb, var(--karbon-bg-2) 50%, transparent);
   }
 
   .rte-media-item {
-    @apply flex flex-col items-center rounded-lg p-2 cursor-pointer transition-all;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    align-items: center;
+    border-radius: 0.5rem;
+    flex-direction: column;
+    display: flex;
+    padding: 0.5rem;
   }
 
   .rte-media-item:hover {
@@ -1573,21 +2300,34 @@
   }
 
   .rte-media-item-selected {
-    @apply bg-violet-500/15 ring-1 ring-violet-500/40;
+    box-shadow: 0 0 0 1px rgba(139,92,246,0.4);
+    background: rgba(139,92,246,0.15);
   }
 
   .rte-media-thumb {
-    @apply h-16 w-16 overflow-hidden rounded-md;
+    overflow: hidden;
+    border-radius: 0.375rem;
+    height: 4rem;
+    width: 4rem;
     background: var(--karbon-bg-2);
   }
 
   .rte-media-list {
-    @apply rounded-lg overflow-hidden;
+    overflow: hidden;
+    border-radius: 0.5rem;
     border: 1px solid var(--karbon-border);
   }
 
   .rte-media-list-item {
-    @apply flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.75rem;
+    display: flex;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
   }
 
   .rte-media-list-item:hover {
@@ -1599,7 +2339,21 @@
   }
 
   .rte-media-list-thumb {
-    @apply h-8 w-8 shrink-0 rounded object-cover;
+    object-fit: cover;
+    flex-shrink: 0;
+    border-radius: 0.25rem;
+    height: 2rem;
+    width: 2rem;
     background: var(--karbon-bg-2);
+  }
+
+  @keyframes karbon-token-slide {
+    from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+    to { opacity: 1; max-height: 200px; }
+  }
+
+  @keyframes karbon-float-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 </style>

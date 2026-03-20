@@ -1,4 +1,5 @@
 export * from './button.js'
+export * from './brand-button.js'
 export * from './badge.js'
 export * from './alert.js'
 export * from './overlay.js'

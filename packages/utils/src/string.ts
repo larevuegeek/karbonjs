@@ -38,11 +38,15 @@ export function pluralize(count: number, word: string, plural?: string): string 
 
 /**
  * Strip HTML tags from a string.
- * For untrusted HTML, prefer a proper sanitizer (DOMPurify).
+ * WARNING: This is NOT a sanitizer. Do NOT use for XSS prevention.
+ * For untrusted input, use DOMPurify or a proper HTML sanitizer.
  */
-export function stripHtml(html: string): string {
+export function stripHtmlTags(html: string): string {
   return html.replace(/<[^>]*?>/g, '').replace(/</g, '&lt;')
 }
+
+/** @deprecated Use `stripHtmlTags` instead. */
+export const stripHtml = stripHtmlTags
 
 /**
  * Get initials from a name (first 2 letters, uppercased).

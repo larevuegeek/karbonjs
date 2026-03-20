@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import type { FormVariant } from '@karbonjs/ui-core'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import type { CSSProperties } from 'react'
+import type { FormVariant, ButtonColor, DatePickerClasses } from '@karbonjs/ui-core'
 
 export interface DatePickerProps {
   name: string
@@ -12,11 +13,13 @@ export interface DatePickerProps {
   required?: boolean
   disabled?: boolean
   variant?: FormVariant
+  color?: ButtonColor
+  classes?: DatePickerClasses
   className?: string
   onChange?: (value: string) => void
 }
 
-const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+const monthNames = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre']
 const dayNames = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']
 
 const themes = {
@@ -71,10 +74,12 @@ export function DatePicker({
   value = '',
   label,
   error,
-  placeholder = 'Sélectionner une date',
+  placeholder = 'Selectionner une date',
   disabled = false,
   required = false,
   variant = 'dark',
+  color,
+  classes = {},
   className = '',
   onChange
 }: DatePickerProps) {
@@ -84,6 +89,11 @@ export function DatePicker({
   const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth() ?? new Date().getMonth())
   const ref = useRef<HTMLDivElement>(null)
   const theme = themes[variant]
+
+  const colorStyle = useMemo((): CSSProperties | undefined => {
+    if (!color) return undefined
+    return { '--karbon-input-focus': `var(--karbon-${color}-500)` } as CSSProperties
+  }, [color])
 
   useEffect(() => {
     function close(e: MouseEvent) {
@@ -126,15 +136,15 @@ export function DatePicker({
   }
 
   return (
-    <div className={`space-y-1.5 ${className}`}>
-      {label && <label htmlFor={name} className={`${theme.label} block mb-1.5`}>{label}</label>}
+    <div className={classes?.root ?? `space-y-1.5 ${className}`} style={colorStyle}>
+      {label && <label htmlFor={name} className={`${classes?.label ?? theme.label} block mb-1.5`}>{label}</label>}
 
       <div className="relative" ref={ref}>
         <button
           type="button"
           onClick={() => { if (!disabled) setShowCalendar(!showCalendar) }}
           disabled={disabled}
-          className={`w-full rounded-lg border px-3 py-2.5 md:py-3 text-[13px] md:text-sm text-left focus:outline-none transition-all ${theme.input} ${error ? 'border-red-500/50' : ''} ${!value ? 'text-gray-500' : ''} cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed`}
+          className={`w-full rounded-lg border px-3 py-2.5 md:py-3 text-[13px] md:text-sm text-left focus:outline-none transition-all ${classes?.trigger ?? theme.input} ${error ? 'border-red-500/50' : ''} ${!value ? 'text-gray-500' : ''} cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed`}
         >
           {value ? formatDisplay(value) : placeholder}
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
@@ -143,9 +153,9 @@ export function DatePicker({
         <input type="hidden" name={name} value={value} required={required} />
 
         {showCalendar && (
-          <div className={`absolute z-50 mt-1 w-72 rounded-xl border shadow-xl p-3 ${theme.calendar}`}>
+          <div className={`absolute z-50 mt-1 w-72 rounded-xl border shadow-xl p-3 ${classes?.calendar ?? theme.calendar}`}>
             <div className="flex items-center justify-between mb-3">
-              <button type="button" onClick={prevMonth} aria-label="Mois précédent" className={`p-1 rounded-lg ${theme.dayHover} cursor-pointer`}>
+              <button type="button" onClick={prevMonth} aria-label="Mois precedent" className={`p-1 rounded-lg ${theme.dayHover} cursor-pointer`}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
               </button>
               <span className="text-sm font-semibold">{monthNames[viewMonth]} {viewYear}</span>
@@ -180,7 +190,7 @@ export function DatePicker({
         )}
       </div>
 
-      {error && <p className={`text-xs ${theme.error}`}>{error}</p>}
+      {error && <p className={`text-xs ${classes?.error ?? theme.error}`}>{error}</p>}
     </div>
   )
 }

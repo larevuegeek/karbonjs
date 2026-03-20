@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+@source "../../packages/ui-svelte/src";
+@import '../../packages/ui-core/src/styles.css';
+@import '../../packages/ui-core/src/colors.css';
+
+/* All themes */
+@import '../../packages/ui-core/src/themes/default.css';
+@import '../../packages/ui-core/src/themes/midnight.css';
+@import '../../packages/ui-core/src/themes/aurora.css';
+@import '../../packages/ui-core/src/themes/minimal.css';
+@import '../../packages/ui-core/src/themes/corporate.css';
+@import '../../packages/ui-core/src/themes/sunset.css';
+@import '../../packages/ui-core/src/themes/ocean.css';
+@import '../../packages/ui-core/src/themes/forest.css';
+@import '../../packages/ui-core/src/themes/neon.css';
+@import '../../packages/ui-core/src/themes/rose.css';

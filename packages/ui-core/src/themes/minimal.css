@@ -1,0 +1,65 @@
+/* @karbonjs/ui-core — Minimal theme: Ultra clean, no shadows, sharp corners */
+
+[data-karbon-theme="minimal"][data-theme="dark"] {
+  --karbon-bg: #0a0a0a;
+  --karbon-bg-2: #141414;
+  --karbon-bg-card: #1a1a1a;
+  --karbon-bg-input: rgba(255, 255, 255, 0.05);
+  --karbon-text: rgba(255, 255, 255, 0.92);
+  --karbon-text-2: rgba(255, 255, 255, 0.55);
+  --karbon-text-3: rgba(255, 255, 255, 0.30);
+  --karbon-text-4: rgba(255, 255, 255, 0.15);
+  --karbon-border: rgba(255, 255, 255, 0.10);
+  --karbon-border-input: rgba(255, 255, 255, 0.15);
+  --karbon-border-input-focus: rgba(255, 255, 255, 0.40);
+  --karbon-nav-hover-bg: rgba(255, 255, 255, 0.06);
+  --karbon-primary: #ffffff;
+  --karbon-primary-hover: #e5e5e5;
+  --karbon-primary-foreground: #0a0a0a;
+  --karbon-secondary: #a1a1aa;
+  --karbon-accent: #ffffff;
+  --karbon-danger: #ef4444;
+  --karbon-success: #22c55e;
+  --karbon-warning: #f59e0b;
+  --karbon-info: #a1a1aa;
+  --karbon-radius-sm: 0;
+  --karbon-radius-md: 0;
+  --karbon-radius-lg: 0;
+  --karbon-radius-xl: 0;
+  --karbon-shadow-sm: none;
+  --karbon-shadow-md: none;
+  --karbon-shadow-lg: none;
+  --karbon-shadow-xl: none;
+}
+
+[data-karbon-theme="minimal"][data-theme="light"] {
+  --karbon-bg: #ffffff;
+  --karbon-bg-2: #fafafa;
+  --karbon-bg-card: #ffffff;
+  --karbon-bg-input: #ffffff;
+  --karbon-text: #0a0a0a;
+  --karbon-text-2: #525252;
+  --karbon-text-3: #a3a3a3;
+  --karbon-text-4: #d4d4d4;
+  --karbon-border: rgba(0, 0, 0, 0.10);
+  --karbon-border-input: rgba(0, 0, 0, 0.18);
+  --karbon-border-input-focus: rgba(0, 0, 0, 0.40);
+  --karbon-nav-hover-bg: rgba(0, 0, 0, 0.04);
+  --karbon-primary: #18181b;
+  --karbon-primary-hover: #3f3f46;
+  --karbon-primary-foreground: #ffffff;
+  --karbon-secondary: #71717a;
+  --karbon-accent: #18181b;
+  --karbon-danger: #ef4444;
+  --karbon-success: #22c55e;
+  --karbon-warning: #f59e0b;
+  --karbon-info: #71717a;
+  --karbon-radius-sm: 0;
+  --karbon-radius-md: 0;
+  --karbon-radius-lg: 0;
+  --karbon-radius-xl: 0;
+  --karbon-shadow-sm: none;
+  --karbon-shadow-md: none;
+  --karbon-shadow-lg: none;
+  --karbon-shadow-xl: none;
+}

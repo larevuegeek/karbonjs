@@ -1,10 +1,12 @@
 // button
 export { Button } from './button/Button.js'
 export type { ButtonProps } from './button/Button.js'
+export { ButtonBrand } from './button/ButtonBrand.js'
+export type { ButtonBrandProps } from './button/ButtonBrand.js'
 
 // form
-export { FormInput } from './form/FormInput.js'
-export type { FormInputProps } from './form/FormInput.js'
+export { Input, Input as FormInput } from './form/Input.js'
+export type { InputProps, InputProps as FormInputProps } from './form/Input.js'
 export { Select } from './form/Select.js'
 export type { SelectProps } from './form/Select.js'
 export { Checkbox } from './form/Checkbox.js'
@@ -48,32 +50,37 @@ export type { PageHeaderProps } from './layout/PageHeader.js'
 export { EmptyState } from './layout/EmptyState.js'
 export type { EmptyStateProps } from './layout/EmptyState.js'
 
-// media
 // image
 export { Image } from './image/Image.js'
 export type { ImageProps } from './image/Image.js'
 export { ImgZoom } from './image/ImgZoom.js'
 export type { ImgZoomProps } from './image/ImgZoom.js'
+export { ImageCompare } from './image/ImageCompare.js'
+export type { ImageCompareProps } from './image/ImageCompare.js'
 
 // carousel
 export { Carousel } from './carousel/Carousel.js'
 export type { CarouselProps } from './carousel/Carousel.js'
 
+// code
+export { CodeBlock } from './code/CodeBlock.js'
+export type { CodeBlockProps } from './code/CodeBlock.js'
+
 // dropdown
 export { Dropdown } from './dropdown/Dropdown.js'
-export type { DropdownProps } from './dropdown/Dropdown.js'
+export type { DropdownProps, DropdownItem } from './dropdown/Dropdown.js'
 
 // accordion
 export { Accordion } from './accordion/Accordion.js'
-export type { AccordionProps } from './accordion/Accordion.js'
+export type { AccordionProps, AccordionItem } from './accordion/Accordion.js'
 
 // tabs
 export { Tabs } from './tabs/Tabs.js'
-export type { TabsProps } from './tabs/Tabs.js'
+export type { TabsProps, TabItem } from './tabs/Tabs.js'
 
 // breadcrumb
 export { Breadcrumb } from './breadcrumb/Breadcrumb.js'
-export type { BreadcrumbProps } from './breadcrumb/Breadcrumb.js'
+export type { BreadcrumbProps, BreadcrumbItem } from './breadcrumb/Breadcrumb.js'
 
 // tooltip
 export { Tooltip } from './tooltip/Tooltip.js'
@@ -105,6 +112,6 @@ export type { RichTextEditorProps } from './editor/RichTextEditor.js'
 
 // data
 export { DataTable } from './data/DataTable.js'
-export type { DataTableProps } from './data/DataTable.js'
+export type { DataTableProps, Column } from './data/DataTable.js'
 export { Pagination } from './data/Pagination.js'
 export type { PaginationProps } from './data/Pagination.js'

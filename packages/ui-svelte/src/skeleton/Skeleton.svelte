@@ -7,6 +7,7 @@
     height?: string
     lines?: number
     class?: string
+    classes?: { root?: string }
   }
 
   let {
@@ -14,7 +15,8 @@
     width = '100%',
     height,
     lines = 1,
-    class: className = ''
+    class: className = '',
+    classes = {}
   }: Props = $props()
 
   const baseClass = 'animate-pulse bg-[var(--karbon-border,rgba(0,0,0,0.07))]'
@@ -29,7 +31,7 @@
 </script>
 
 {#if variant === 'text' && lines > 1}
-  <div class="space-y-2 {className}">
+  <div class="space-y-2 {classes?.root ?? className}">
     {#each Array(lines) as _, i}
       <div
         class="{baseClass} {v.rounded}"
@@ -39,12 +41,12 @@
   </div>
 {:else if variant === 'circle'}
   <div
-    class="{baseClass} {v.rounded} aspect-square {className}"
+    class="{baseClass} {v.rounded} aspect-square {classes?.root ?? className}"
     style="width: {width === '100%' ? height ?? v.h : width}; height: {height ?? v.h}"
   ></div>
 {:else}
   <div
-    class="{baseClass} {v.rounded} {className}"
+    class="{baseClass} {v.rounded} {classes?.root ?? className}"
     style="width: {width}; height: {height ?? v.h}"
   ></div>
 {/if}

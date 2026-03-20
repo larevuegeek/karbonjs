@@ -33,8 +33,10 @@ function cleanHtml(html: string): string {
       if (parts.length) el.setAttribute('style', parts.join(';')); else el.removeAttribute('style')
     }
   })
-  div.querySelectorAll('script, style, meta, link').forEach(el => el.remove())
-  return div.innerHTML
+  div.querySelectorAll('script, style, meta, link, iframe, object, embed, form, base').forEach(el => el.remove())
+  let str = div.innerHTML
+  str = str.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
+  return str
 }
 
 function formatHtml(html: string): string {
@@ -297,6 +299,15 @@ export function RichTextEditor({
   }
 
   // Embed
+  function isSafeUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url)
+      return ['http:', 'https:'].includes(parsed.protocol)
+    } catch {
+      return false
+    }
+  }
+
   function insertEmbed() {
     setShowEmbedModal(false)
     if (!embedUrl) return
@@ -306,6 +317,7 @@ export function RichTextEditor({
     if (match) { exec('insertHTML', `<div class="embed-responsive"><iframe src="https://www.youtube.com/embed/${escAttr(match[1])}" frameborder="0" allowfullscreen loading="lazy"></iframe></div><p><br></p>`); return }
     match = embedUrl.match(/vimeo\.com\/(\d+)/)
     if (match) { exec('insertHTML', `<div class="embed-responsive"><iframe src="https://player.vimeo.com/video/${escAttr(match[1])}" frameborder="0" allowfullscreen loading="lazy"></iframe></div><p><br></p>`); return }
+    if (!isSafeUrl(embedUrl)) return
     exec('insertHTML', `<div class="embed-responsive"><iframe src="${escAttr(embedUrl)}" frameborder="0" loading="lazy"></iframe></div><p><br></p>`)
   }
 
@@ -330,7 +342,14 @@ export function RichTextEditor({
 
   function replaceAll() {
     if (!findText || !editorRef.current) return
-    editorRef.current.innerHTML = editorRef.current.innerHTML.replaceAll(findText, replaceText)
+    const walker = document.createTreeWalker(editorRef.current, NodeFilter.SHOW_TEXT)
+    const nodes: Text[] = []
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text)
+    for (const node of nodes) {
+      if (node.textContent?.includes(findText)) {
+        node.textContent = node.textContent.replaceAll(findText, replaceText)
+      }
+    }
     onChange?.(editorRef.current.innerHTML)
   }
 

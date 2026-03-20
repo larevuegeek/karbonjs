@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import type { FormVariant } from '@karbonjs/ui-core'
+  import type { FormVariant, FormInputVariant, FormInputClasses, ButtonColor } from '@karbonjs/ui-core'
 
   interface Props {
     name: string
@@ -9,6 +9,7 @@
     placeholder?: string
     label?: string
     error?: string
+    errorIcon?: boolean
     required?: boolean
     disabled?: boolean
     readonly?: boolean
@@ -16,6 +17,9 @@
     clearable?: boolean
     icon?: Snippet
     variant?: FormVariant
+    inputVariant?: FormInputVariant
+    color?: ButtonColor
+    classes?: FormInputClasses
     class?: string
     inputClass?: string
     labelClass?: string
@@ -34,6 +38,7 @@
     placeholder = '',
     label = '',
     error = '',
+    errorIcon = true,
     required = false,
     disabled = false,
     readonly = false,
@@ -41,6 +46,9 @@
     clearable = false,
     icon,
     variant = 'dark',
+    inputVariant = 'outlined',
+    color,
+    classes,
     class: className = '',
     inputClass = '',
     labelClass = '',
@@ -60,6 +68,9 @@
   const hasRightAction = $derived(isPassword || (clearable && value))
   const hasIcon = $derived(!!icon)
 
+  const focusColor = $derived(color ? `var(--karbon-${color}-500)` : 'var(--karbon-primary)')
+  const focusRingColor = $derived(color ? `var(--karbon-${color}-500)` : 'var(--karbon-primary)')
+
   function handleFocus(e: FocusEvent) {
     focused = true
     onfocus?.(e)
@@ -77,30 +88,39 @@
   const themes = {
     dark: {
       label: 'text-[11px] font-medium text-gray-500 uppercase tracking-wider',
-      input: 'border-white/8 bg-white/3 text-white placeholder-gray-700 focus:border-[var(--karbon-primary)]/50 focus:bg-white/5 focus:ring-[3px] focus:ring-[var(--karbon-primary)]/8',
       icon: 'text-gray-600',
-      iconFocused: 'text-[var(--karbon-primary)]',
       action: 'text-gray-600 hover:text-gray-400',
       error: 'text-red-400',
-      glow: true
+      glow: true,
+      base: 'text-white placeholder-gray-700',
+      variants: {
+        outlined: 'border border-white/8 bg-white/3',
+        filled: 'border-0 bg-white/8',
+        underline: 'rounded-none bg-transparent'
+      }
     },
     light: {
       label: 'text-sm font-medium text-gray-700',
-      input: 'border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:border-[var(--karbon-primary)] focus:ring-2 focus:ring-[var(--karbon-primary)]/20',
       icon: 'text-gray-400',
-      iconFocused: 'text-[var(--karbon-primary)]',
       action: 'text-gray-400 hover:text-gray-600',
       error: 'text-[var(--karbon-danger)]',
-      glow: false
+      glow: false,
+      base: 'text-gray-900 placeholder-gray-400',
+      variants: {
+        outlined: 'border border-gray-300 bg-white',
+        filled: 'border-0 bg-gray-100',
+        underline: 'rounded-none bg-transparent'
+      }
     }
   } as const
 
   const theme = $derived(themes[variant])
+  const variantClass = $derived(theme.variants[inputVariant])
 </script>
 
-<div class="{wrapperClass || 'space-y-1.5'}">
+<div class="{classes?.root ?? ''} {wrapperClass || 'space-y-1.5'}">
   {#if label}
-    <label for={name} class="{theme.label} block mb-1.5 {labelClass}">
+    <label for={name} class="{theme.label} block mb-1.5 {classes?.label ?? ''} {labelClass}">
       {label}
     </label>
   {/if}
@@ -108,8 +128,9 @@
   <div class="relative {className}">
     {#if icon}
       <div
-        class="absolute left-3 top-1/2 -translate-y-1/2 transition-colors {focused ? theme.iconFocused : theme.icon}"
+        class="absolute left-3 top-1/2 -translate-y-1/2 transition-colors {classes?.icon ?? ''} {focused ? '' : theme.icon}"
         class:z-10={variant === 'dark'}
+        style={focused ? `color: ${focusColor}` : ''}
       >
         {@render icon()}
       </div>
@@ -130,14 +151,15 @@
       {onkeydown}
       onfocus={handleFocus}
       onblur={handleBlur}
-      class="w-full rounded-lg border {hasIcon ? 'pl-9' : 'pl-3'} {hasRightAction ? 'pr-10' : 'pr-3'} py-2.5 md:py-3 text-[13px] md:text-sm focus:outline-none transition-all {theme.input} {error ? 'border-red-500/50' : ''} {variant === 'dark' ? 'relative z-[1]' : ''} {inputClass}"
+      class="w-full {inputVariant !== 'underline' ? 'rounded-lg' : ''} {hasIcon ? 'pl-9' : 'pl-3'} {hasRightAction ? 'pr-10' : 'pr-3'} py-2.5 md:py-3 text-[13px] md:text-sm focus:outline-none transition-all {theme.base} {variantClass} {error ? 'border-red-500/50' : ''} {disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''} {variant === 'dark' ? 'relative z-[1]' : ''} {classes?.input ?? ''} {inputClass}"
+      style="{inputVariant === 'underline' ? 'border:none;border-bottom:1px solid ' + (focused ? focusColor : error ? 'var(--karbon-danger)' : 'var(--karbon-border-input)') + ';border-radius:0;' : ''}{focused ? (inputVariant === 'underline' ? 'box-shadow:none;' : 'border-color:' + focusColor + ';box-shadow:0 0 0 3px color-mix(in srgb,' + focusRingColor + ' 12%,transparent);') : ''}"
     />
 
-    {#if variant === 'dark' && theme.glow}
+    {#if variant === 'dark' && theme.glow && inputVariant === 'outlined'}
       <div
         class="absolute -inset-px rounded-lg opacity-0 transition-opacity duration-300 pointer-events-none"
         class:opacity-100={focused}
-        style="background: linear-gradient(135deg, rgba(204, 26, 26, 0.1), transparent 50%);"
+        style="background: linear-gradient(135deg, color-mix(in srgb, {focusColor} 10%, transparent), transparent 50%);"
       ></div>
     {/if}
 
@@ -169,6 +191,11 @@
   </div>
 
   {#if error}
-    <p class="text-xs {theme.error}">{error}</p>
+    <p class="flex items-center gap-1.5 text-xs {theme.error} {classes?.error ?? ''}">
+      {#if errorIcon}
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      {/if}
+      <span>{error}</span>
+    </p>
   {/if}
 </div>

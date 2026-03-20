@@ -1,4 +1,15 @@
+import type { ButtonColor } from './button'
+
 export type FormVariant = 'dark' | 'light'
+export type FormInputVariant = 'outlined' | 'filled' | 'underline'
+
+export interface FormInputClasses {
+  root?: string
+  label?: string
+  input?: string
+  icon?: string
+  error?: string
+}
 
 export interface FormInputProps {
   name: string
@@ -13,6 +24,9 @@ export interface FormInputProps {
   autocomplete?: string
   clearable?: boolean
   variant?: FormVariant
+  inputVariant?: FormInputVariant
+  color?: ButtonColor
+  classes?: FormInputClasses
   class?: string
   inputClass?: string
   labelClass?: string
@@ -25,6 +39,13 @@ export interface SelectOption {
   disabled?: boolean
 }
 
+export interface SelectClasses {
+  root?: string
+  label?: string
+  select?: string
+  error?: string
+}
+
 export interface SelectProps {
   name: string
   options: SelectOption[]
@@ -35,7 +56,17 @@ export interface SelectProps {
   required?: boolean
   disabled?: boolean
   variant?: FormVariant
+  inputVariant?: FormInputVariant
+  color?: ButtonColor
+  classes?: SelectClasses
   class?: string
+}
+
+export interface CheckboxClasses {
+  root?: string
+  input?: string
+  label?: string
+  description?: string
 }
 
 export interface CheckboxProps {
@@ -45,10 +76,19 @@ export interface CheckboxProps {
   label?: string
   description?: string
   disabled?: boolean
+  color?: ButtonColor
+  classes?: CheckboxClasses
   class?: string
 }
 
 export type ToggleSize = 'sm' | 'md'
+
+export interface ToggleClasses {
+  root?: string
+  track?: string
+  dot?: string
+  label?: string
+}
 
 export interface ToggleProps {
   name: string
@@ -56,7 +96,17 @@ export interface ToggleProps {
   label?: string
   size?: ToggleSize
   disabled?: boolean
+  color?: ButtonColor
+  classes?: ToggleClasses
   class?: string
+}
+
+export interface TextareaClasses {
+  root?: string
+  label?: string
+  textarea?: string
+  error?: string
+  count?: string
 }
 
 export interface TextareaProps {
@@ -72,6 +122,9 @@ export interface TextareaProps {
   disabled?: boolean
   readonly?: boolean
   variant?: FormVariant
+  inputVariant?: FormInputVariant
+  color?: ButtonColor
+  classes?: TextareaClasses
   class?: string
 }
 
@@ -84,6 +137,14 @@ export interface RadioOption {
 
 export type RadioDirection = 'row' | 'column'
 
+export interface RadioClasses {
+  root?: string
+  legend?: string
+  input?: string
+  label?: string
+  description?: string
+}
+
 export interface RadioProps {
   name: string
   options: RadioOption[]
@@ -91,7 +152,16 @@ export interface RadioProps {
   label?: string
   direction?: RadioDirection
   disabled?: boolean
+  color?: ButtonColor
+  classes?: RadioClasses
   class?: string
+}
+
+export interface SliderClasses {
+  root?: string
+  label?: string
+  value?: string
+  input?: string
 }
 
 export interface SliderProps {
@@ -103,7 +173,17 @@ export interface SliderProps {
   label?: string
   showValue?: boolean
   disabled?: boolean
+  color?: ButtonColor
+  classes?: SliderClasses
   class?: string
+}
+
+export interface DatePickerClasses {
+  root?: string
+  label?: string
+  trigger?: string
+  calendar?: string
+  error?: string
 }
 
 export interface DatePickerProps {
@@ -117,7 +197,17 @@ export interface DatePickerProps {
   required?: boolean
   disabled?: boolean
   variant?: FormVariant
+  color?: ButtonColor
+  classes?: DatePickerClasses
   class?: string
+}
+
+export interface ColorPickerClasses {
+  root?: string
+  label?: string
+  trigger?: string
+  dropdown?: string
+  hexInput?: string
 }
 
 export interface ColorPickerProps {
@@ -126,5 +216,7 @@ export interface ColorPickerProps {
   label?: string
   presets?: string[]
   disabled?: boolean
+  color?: ButtonColor
+  classes?: ColorPickerClasses
   class?: string
 }

@@ -12,6 +12,16 @@ interface CacheEntry {
   timestamp: number
 }
 
+function hashToken(token: string): string {
+  let hash = 0
+  for (let i = 0; i < token.length; i++) {
+    const char = token.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash |= 0
+  }
+  return hash.toString(36)
+}
+
 /**
  * In-memory user cache for SSR hooks.
  * Prevents hammering the /profile endpoint on every request.
@@ -28,12 +38,18 @@ export function createUserCache(opts: UserCacheOptions = {}) {
     }
   }
 
+  const cleanupTimer = setInterval(() => {
+    purgeExpired()
+  }, 60_000) // every minute
+  if (typeof cleanupTimer.unref === 'function') cleanupTimer.unref()
+
   return {
     get(token: string): AuthUser | null {
-      const entry = store.get(token)
+      const key = hashToken(token)
+      const entry = store.get(key)
       if (!entry) return null
       if (Date.now() - entry.timestamp > ttl) {
-        store.delete(token)
+        store.delete(key)
         return null
       }
       return entry.user
@@ -47,11 +63,11 @@ export function createUserCache(opts: UserCacheOptions = {}) {
         const oldest = store.keys().next().value
         if (oldest) store.delete(oldest)
       }
-      store.set(token, { user, timestamp: Date.now() })
+      store.set(hashToken(token), { user, timestamp: Date.now() })
     },
 
     invalidate(token: string): void {
-      store.delete(token)
+      store.delete(hashToken(token))
     },
 
     clear(): void {
@@ -60,6 +76,11 @@ export function createUserCache(opts: UserCacheOptions = {}) {
 
     get size(): number {
       return store.size
+    },
+
+    destroy(): void {
+      clearInterval(cleanupTimer)
+      store.clear()
     },
   }
 }

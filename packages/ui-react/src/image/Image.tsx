@@ -10,6 +10,7 @@ export interface ImageProps {
   aspect?: ImageAspect
   fallback?: string
   imgbox?: boolean
+  classes?: { root?: string; img?: string }
   className?: string
   onClick?: () => void
 }
@@ -44,6 +45,7 @@ export function Image({
   aspect = 'auto',
   fallback = '',
   imgbox = false,
+  classes = {},
   className = '',
   onClick
 }: ImageProps) {
@@ -61,14 +63,14 @@ export function Image({
   return (
     <>
       <div
-        className={`group overflow-hidden ${roundedClasses[rounded]} ${aspectClasses[aspect]} ${isClickable ? 'cursor-pointer' : ''} ${className}`}
+        className={`group overflow-hidden ${roundedClasses[rounded]} ${aspectClasses[aspect]} ${isClickable ? 'cursor-pointer' : ''} ${classes?.root ?? className}`}
         onClick={isClickable ? handleClick : undefined}
       >
         <img
           src={imgSrc}
           alt={alt}
           onError={() => setErrored(true)}
-          className={`w-full h-full object-cover transition-all duration-300 ${hoverClasses[hover]}`}
+          className={`w-full h-full object-cover transition-all duration-300 ${hoverClasses[hover]} ${classes?.img ?? ''}`}
           loading="lazy"
         />
       </div>

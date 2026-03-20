@@ -1,0 +1,67 @@
+/* @karbonjs/ui-core — Neon theme: Cyberpunk/gaming, neon glow effects */
+
+[data-karbon-theme="neon"][data-theme="dark"] {
+  --karbon-bg: #000000;
+  --karbon-bg-2: #0a0a0a;
+  --karbon-bg-card: #111111;
+  --karbon-bg-input: rgba(163, 230, 53, 0.04);
+  --karbon-text: rgba(255, 255, 255, 0.95);
+  --karbon-text-2: rgba(163, 230, 53, 0.70);
+  --karbon-text-3: rgba(255, 255, 255, 0.35);
+  --karbon-text-4: rgba(255, 255, 255, 0.18);
+  --karbon-border: rgba(163, 230, 53, 0.15);
+  --karbon-border-input: rgba(163, 230, 53, 0.20);
+  --karbon-border-input-focus: rgba(163, 230, 53, 0.6);
+  --karbon-nav-hover-bg: rgba(163, 230, 53, 0.08);
+  --karbon-primary: #a3e635;
+  --karbon-primary-hover: #84cc16;
+  --karbon-primary-foreground: #0a0a0a;
+  --karbon-secondary: #22d3ee;
+  --karbon-accent: #f472b6;
+  --karbon-danger: #f87171;
+  --karbon-success: #a3e635;
+  --karbon-warning: #fbbf24;
+  --karbon-info: #22d3ee;
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --karbon-glow-primary: 0 0 10px rgba(163, 230, 53, 0.3), 0 0 30px rgba(163, 230, 53, 0.15);
+  --karbon-glow-secondary: 0 0 10px rgba(34, 211, 238, 0.3), 0 0 30px rgba(34, 211, 238, 0.15);
+  --karbon-glow-accent: 0 0 10px rgba(244, 114, 182, 0.3), 0 0 30px rgba(244, 114, 182, 0.15);
+  --karbon-glow: 0 0 15px rgba(163, 230, 53, 0.2);
+  --karbon-glow-text: 0 0 8px rgba(163, 230, 53, 0.4);
+}
+
+[data-karbon-theme="neon"][data-theme="light"] {
+  --karbon-bg: #fafafa;
+  --karbon-bg-2: #f0f0f0;
+  --karbon-bg-card: #ffffff;
+  --karbon-bg-input: #ffffff;
+  --karbon-text: #0a0a0a;
+  --karbon-text-2: #365314;
+  --karbon-text-3: #a3a3a3;
+  --karbon-text-4: #d4d4d4;
+  --karbon-border: rgba(101, 163, 13, 0.18);
+  --karbon-border-input: rgba(101, 163, 13, 0.22);
+  --karbon-border-input-focus: rgba(132, 204, 22, 0.5);
+  --karbon-nav-hover-bg: rgba(163, 230, 53, 0.10);
+  --karbon-primary: #65a30d;
+  --karbon-primary-hover: #4d7c0f;
+  --karbon-primary-foreground: #ffffff;
+  --karbon-secondary: #0891b2;
+  --karbon-accent: #db2777;
+  --karbon-danger: #ef4444;
+  --karbon-success: #22c55e;
+  --karbon-warning: #f59e0b;
+  --karbon-info: #06b6d4;
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --karbon-glow-primary: none;
+  --karbon-glow-secondary: none;
+  --karbon-glow-accent: none;
+  --karbon-glow: none;
+  --karbon-glow-text: none;
+}

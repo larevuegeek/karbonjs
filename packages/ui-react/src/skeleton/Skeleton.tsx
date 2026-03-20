@@ -5,6 +5,7 @@ export interface SkeletonProps {
   width?: string
   height?: string
   lines?: number
+  classes?: { root?: string }
   className?: string
 }
 
@@ -16,12 +17,12 @@ const variantDefaults: Record<string, { h: string; rounded: string }> = {
   rect: { h: '8rem', rounded: 'rounded-lg' }
 }
 
-export function Skeleton({ variant = 'text', width = '100%', height, lines = 1, className = '' }: SkeletonProps) {
+export function Skeleton({ variant = 'text', width = '100%', height, lines = 1, classes = {}, className = '' }: SkeletonProps) {
   const v = variantDefaults[variant]
 
   if (variant === 'text' && lines > 1) {
     return (
-      <div className={`space-y-2 ${className}`}>
+      <div className={`space-y-2 ${classes?.root ?? className}`}>
         {Array.from({ length: lines }).map((_, i) => (
           <div key={i} className={`${baseClass} ${v.rounded}`} style={{ width: i === lines - 1 ? '66%' : width, height: height ?? v.h }} />
         ))}
@@ -30,8 +31,8 @@ export function Skeleton({ variant = 'text', width = '100%', height, lines = 1, 
   }
 
   if (variant === 'circle') {
-    return <div className={`${baseClass} ${v.rounded} aspect-square ${className}`} style={{ width: width === '100%' ? height ?? v.h : width, height: height ?? v.h }} />
+    return <div className={`${baseClass} ${v.rounded} aspect-square ${classes?.root ?? className}`} style={{ width: width === '100%' ? height ?? v.h : width, height: height ?? v.h }} />
   }
 
-  return <div className={`${baseClass} ${v.rounded} ${className}`} style={{ width, height: height ?? v.h }} />
+  return <div className={`${baseClass} ${v.rounded} ${classes?.root ?? className}`} style={{ width, height: height ?? v.h }} />
 }

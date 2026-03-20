@@ -1,0 +1,58 @@
+/* @karbonjs/ui-core — Midnight theme: Dark premium, deep blue-black with violet accents */
+/* Used by LaRevueGeek.com */
+
+[data-karbon-theme="midnight"][data-theme="dark"] {
+  --karbon-bg: #060412;
+  --karbon-bg-2: #080515;
+  --karbon-bg-card: #0a0820;
+  --karbon-bg-input: rgba(255, 255, 255, 0.06);
+  --karbon-text: rgba(255, 255, 255, 0.90);
+  --karbon-text-2: rgba(255, 255, 255, 0.50);
+  --karbon-text-3: rgba(255, 255, 255, 0.30);
+  --karbon-text-4: rgba(255, 255, 255, 0.18);
+  --karbon-border: rgba(255, 255, 255, 0.06);
+  --karbon-border-input: rgba(255, 255, 255, 0.10);
+  --karbon-border-input-focus: rgba(204, 26, 26, 0.5);
+  --karbon-nav-hover-bg: rgba(255, 255, 255, 0.05);
+  --karbon-primary: #cc1a1a;
+  --karbon-primary-hover: #a81515;
+  --karbon-secondary: #8b5cf6;
+  --karbon-accent: #a78bfa;
+  --karbon-danger: #ef4444;
+  --karbon-success: #22c55e;
+  --karbon-warning: #f59e0b;
+  --karbon-info: #8b5cf6;
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(6, 4, 18, 0.6);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(6, 4, 18, 0.7);
+  --karbon-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+}
+
+[data-karbon-theme="midnight"][data-theme="light"] {
+  --karbon-bg: #f2f0fa;
+  --karbon-bg-2: #e8e6f0;
+  --karbon-bg-card: #ffffff;
+  --karbon-bg-input: #ffffff;
+  --karbon-text: #1a1635;
+  --karbon-text-2: #5a567e;
+  --karbon-text-3: #8e8aae;
+  --karbon-text-4: #b5b2cc;
+  --karbon-border: rgba(0, 0, 0, 0.07);
+  --karbon-border-input: rgba(0, 0, 0, 0.12);
+  --karbon-border-input-focus: rgba(204, 26, 26, 0.5);
+  --karbon-nav-hover-bg: rgba(0, 0, 0, 0.04);
+  --karbon-primary: #cc1a1a;
+  --karbon-primary-hover: #a81515;
+  --karbon-secondary: #7c3aed;
+  --karbon-accent: #8b5cf6;
+  --karbon-danger: #ef4444;
+  --karbon-success: #22c55e;
+  --karbon-warning: #f59e0b;
+  --karbon-info: #7c3aed;
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --karbon-glow: none;
+}

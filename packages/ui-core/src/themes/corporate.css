@@ -1,0 +1,55 @@
+/* @karbonjs/ui-core — Corporate theme: Business serious, navy blue, crisp borders */
+
+[data-karbon-theme="corporate"][data-theme="dark"] {
+  --karbon-bg: #0f172a;
+  --karbon-bg-2: #1e293b;
+  --karbon-bg-card: #1e293b;
+  --karbon-bg-input: rgba(255, 255, 255, 0.06);
+  --karbon-text: rgba(255, 255, 255, 0.92);
+  --karbon-text-2: rgba(203, 213, 225, 0.70);
+  --karbon-text-3: rgba(148, 163, 184, 0.50);
+  --karbon-text-4: rgba(148, 163, 184, 0.25);
+  --karbon-border: rgba(148, 163, 184, 0.15);
+  --karbon-border-input: rgba(148, 163, 184, 0.20);
+  --karbon-border-input-focus: rgba(29, 78, 216, 0.5);
+  --karbon-nav-hover-bg: rgba(148, 163, 184, 0.08);
+  --karbon-primary: #1d4ed8;
+  --karbon-primary-hover: #1e40af;
+  --karbon-secondary: #475569;
+  --karbon-accent: #f59e0b;
+  --karbon-danger: #dc2626;
+  --karbon-success: #16a34a;
+  --karbon-warning: #d97706;
+  --karbon-info: #2563eb;
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+[data-karbon-theme="corporate"][data-theme="light"] {
+  --karbon-bg: #f8fafc;
+  --karbon-bg-2: #f1f5f9;
+  --karbon-bg-card: #ffffff;
+  --karbon-bg-input: #ffffff;
+  --karbon-text: #0f172a;
+  --karbon-text-2: #334155;
+  --karbon-text-3: #94a3b8;
+  --karbon-text-4: #cbd5e1;
+  --karbon-border: rgba(15, 23, 42, 0.12);
+  --karbon-border-input: rgba(15, 23, 42, 0.18);
+  --karbon-border-input-focus: rgba(29, 78, 216, 0.5);
+  --karbon-nav-hover-bg: rgba(15, 23, 42, 0.04);
+  --karbon-primary: #1d4ed8;
+  --karbon-primary-hover: #1e40af;
+  --karbon-secondary: #475569;
+  --karbon-accent: #d97706;
+  --karbon-danger: #dc2626;
+  --karbon-success: #16a34a;
+  --karbon-warning: #d97706;
+  --karbon-info: #2563eb;
+  --karbon-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --karbon-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --karbon-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}

@@ -1,7 +1,7 @@
 export { formatDate, formatDateTime, timeAgo, formatMonthYear, isToday, isPast } from './date.js'
 export type { DateFormatOptions } from './date.js'
 
-export { truncate, slugify, capitalize, pluralize, stripHtml, initials, hashColorIndex, escapeHtml, camelCase, kebabCase, isImage } from './string.js'
+export { truncate, slugify, capitalize, pluralize, stripHtml, stripHtmlTags, initials, hashColorIndex, escapeHtml, camelCase, kebabCase, isImage } from './string.js'
 
 export { formatSize, formatCount, clamp, formatPercent, formatPrice, randomInt } from './number.js'
 

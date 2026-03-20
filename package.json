@@ -17,5 +17,8 @@
   "devDependencies": {
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "simple-icons": "^16.12.0"
   }
 }

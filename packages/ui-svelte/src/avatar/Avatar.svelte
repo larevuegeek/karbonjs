@@ -6,7 +6,9 @@
     alt?: string
     name?: string
     size?: AvatarSize
+    color?: string
     class?: string
+    classes?: { root?: string }
   }
 
   let {
@@ -14,7 +16,9 @@
     alt = '',
     name = '',
     size = 'md',
-    class: className = ''
+    color,
+    class: className = '',
+    classes = {}
   }: Props = $props()
 
   let errored = $state(false)
@@ -32,9 +36,19 @@
   )
 
   const showImage = $derived(src && !errored)
+
+  const colorStyle = $derived.by(() => {
+    if (!color) return ''
+    return `background:color-mix(in srgb,var(--karbon-${color}-500) 15%,transparent);color:var(--karbon-${color}-400)`
+  })
+
+  const defaultBgClass = $derived(color ? '' : 'bg-[var(--karbon-bg-2,#e8e6f0)] text-[var(--karbon-text-2,#5a567e)]')
 </script>
 
-<div class="relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-[var(--karbon-bg-2,#e8e6f0)] text-[var(--karbon-text-2,#5a567e)] font-semibold {sizeClasses[size]} {className}">
+<div
+  class="relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden font-semibold {defaultBgClass} {sizeClasses[size]} {classes?.root ?? className}"
+  style={colorStyle}
+>
   {#if showImage}
     <img
       {src}

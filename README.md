@@ -1,6 +1,6 @@
 # KarbonJS
 
-Modern full-stack TypeScript toolkit — utilities, API helpers, auth tools, **31 UI components** + WYSIWYG editor for Svelte 5 & React.
+Modern full-stack TypeScript toolkit — utilities, API helpers, auth tools, **35 UI components** + WYSIWYG editor for Svelte 5 & React.
 
 Frontend companion to [Karbon Framework](https://crates.io/crates/karbon-framework) (Rust backend).
 
@@ -12,31 +12,89 @@ Frontend companion to [Karbon Framework](https://crates.io/crates/karbon-framewo
 | `@karbonjs/types` | Shared TypeScript types (API, Auth) | `pnpm add @karbonjs/types` |
 | `@karbonjs/api` | API client (SSR + client), SvelteKit proxy, rate limiter | `pnpm add @karbonjs/api` |
 | `@karbonjs/auth` | Token manager, user cache, role hierarchy | `pnpm add @karbonjs/auth` |
-| `@karbonjs/ui-core` | Design tokens CSS + shared prop types | `pnpm add @karbonjs/ui-core` |
-| `@karbonjs/ui-svelte` | 31 Svelte 5 UI components + WYSIWYG editor (Tailwind) | `pnpm add @karbonjs/ui-svelte` |
-| `@karbonjs/ui-react` | 30 React UI components (Tailwind) | `pnpm add @karbonjs/ui-react` |
+| `@karbonjs/ui-core` | Design tokens, 12 color palettes, 10 themes | `pnpm add @karbonjs/ui-core` |
+| `@karbonjs/ui-svelte` | 35 Svelte 5 components + WYSIWYG editor | `pnpm add @karbonjs/ui-svelte` |
+| `@karbonjs/ui-react` | 35 React components | `pnpm add @karbonjs/ui-react` |
 
 ## Quick Start
 
 ```bash
-pnpm add @karbonjs/utils @karbonjs/ui-svelte
+pnpm add @karbonjs/utils @karbonjs/ui-svelte @karbonjs/ui-core
+```
+
+```css
+/* app.css */
+@import 'tailwindcss';
+@source "../node_modules/@karbonjs/ui-svelte/src";
+@import '../node_modules/@karbonjs/ui-core/src/styles.css';
+@import '../node_modules/@karbonjs/ui-core/src/themes/midnight.css';
 ```
 
 ```svelte
 <script>
-  import { Button, Card, Modal } from '@karbonjs/ui-svelte'
-  import { formatDate, timeAgo } from '@karbonjs/utils'
+  import { Button, Card, Badge, Input } from '@karbonjs/ui-svelte'
+  import { timeAgo } from '@karbonjs/utils'
 </script>
 
 <Card title="Article" hoverable>
-  <p>Publié {timeAgo('2026-03-14')}</p>
-  <Button variant="primary" arrow>Lire la suite</Button>
+  <p>Published {timeAgo('2026-03-20')}</p>
+  <Button variant="solid" color="emerald" shape="pill" arrow>Read more</Button>
 </Card>
 ```
 
-## API Proxy (SvelteKit)
+## Design System
 
-Secure proxy for SvelteKit catch-all routes — forward requests to your Karbon backend with built-in security:
+### 12 Color Palettes (132 CSS variables)
+red, orange, amber, yellow, lime, emerald, cyan, blue, violet, pink, slate, zinc — each with 11 shades (50-950).
+
+### 10 Themes
+`default` · `midnight` · `aurora` · `minimal` · `corporate` · `sunset` · `ocean` · `forest` · `neon` · `rose`
+
+```html
+<html data-theme="dark" data-karbon-theme="midnight">
+```
+
+### 3-Level Customization
+1. **Theme** — global design tokens via CSS
+2. **Props** — `color`, `variant`, `shape`, `size` per component
+3. **Classes** — `classes={{ root, header, body }}` for targeted overrides
+
+## UI Components (35)
+
+### Button
+`Button` — 7 variants (solid, flat, bordered, outline, light, ghost, shadow), 8 sizes (2xs-3xl), 5 shapes, arrow effect, loading
+`ButtonBrand` — 30+ brand buttons (Google, Facebook, GitHub, Discord, etc.) with Simple Icons
+
+### Form (9)
+`Input` · `Select` (custom dropdown, multi-select, chips, searchable) · `Checkbox` (4 variants, 7 icons) · `Toggle` (icons, sizes) · `Radio` (4 variants) · `Textarea` · `Slider` · `DatePicker` · `ColorPicker`
+
+### Data
+`DataTable` — declarative columns, sort, search, filter, select, pagination, CSV export, loading skeleton
+`Pagination` — 4 variants, ellipsis, first/last, SSR links
+
+### Layout
+`Card` · `PageHeader` (breadcrumb, back button, actions) · `EmptyState` (illustration, actions)
+
+### Overlay
+`Modal` (6 sizes, 4 positions, scroll lock) · `Dialog` (confirmInput, loading) · `Toast` (countdown, pause on hover) · `ImgBox` (lightbox, thumbnails, zoom, transitions)
+
+### Image & Media
+`Image` · `ImgZoom` (3 modes: overlay, lens, side) · `ImageCompare` (before/after slider) · `Carousel` (slide/fade, multi-slides, drag/swipe)
+
+### Navigation
+`Tabs` (4 variants, vertical, badges) · `Accordion` (5 variants, 5 arrow styles, bg/border custom) · `Breadcrumb` (5 separators, collapse) · `Dropdown` (groups, badges, search, keyboard nav)
+
+### Feedback
+`Badge` (5 variants, closable, dot) · `AlertMessage` (4 variants, title, actions, dismissible) · `Progress` (striped, gradient, glow, multi-segments) · `Tooltip` (3 variants, rich content) · `Avatar` · `Skeleton`
+
+### Code & Editor
+`CodeBlock` — syntax highlighting (15+ languages), copy, line numbers, line copy, highlight lines
+`RichTextEditor` — WYSIWYG, toolbar presets (minimal/standard/full), floating toolbar, block tokens (Elementor-style), media explorer
+
+### Utility
+`Divider` (4 variants, icon, vertical) · `Kbd`
+
+## API Proxy (SvelteKit)
 
 ```ts
 // src/routes/api/[...path]/+server.ts
@@ -45,81 +103,31 @@ import { createProxy } from '@karbonjs/api/server'
 export const { GET, POST, PUT, PATCH, DELETE } = createProxy({
   backend: 'http://localhost:8080',
   prefix: '/api',
-  blockedPrefixes: ['internal'],
   csrf: true,
   rateLimit: {
     'auth/login':    { max: 20, windowSec: 60 },
-    'auth/register': { max: 10, windowSec: 60 },
     '*':             { max: 200, windowSec: 60 },
   },
 })
 ```
 
-**Included:** path sanitization, CSRF (Origin vs Host), sliding window rate limiter (per IP), body size limit, request/response streaming, cookie forwarding, `X-Forwarded-For`.
+**Security:** path sanitization (encoded traversal blocked), CSRF (Origin required on mutations), sliding window rate limiter, body size limit, cookie forwarding, `X-Forwarded-For`.
 
-## UI Components (31)
+## Playground
 
-### Editor
-`RichTextEditor` — full WYSIWYG editor with toolbar, source mode, tables, embeds, media explorer (via `MediaProvider`)
-
-### Form (9)
-`FormInput` · `Select` · `Checkbox` · `Toggle` · `Radio` · `Textarea` · `Slider` · `DatePicker` · `ColorPicker`
-
-### Button
-`Button` — variants (primary, secondary, danger, ghost, outline), sizes, loading state, arrow animation, fullWidth
-
-### Layout
-`Card` · `PageHeader` · `EmptyState`
-
-### Overlay
-`Modal` · `Dialog` · `Toast` · `ImgBox`
-
-### Image & Media
-`Image` · `ImgZoom` · `Carousel`
-
-### Navigation
-`Dropdown` · `Accordion` · `Tabs` · `Breadcrumb`
-
-### Feedback
-`Tooltip` · `Avatar` · `Progress` · `Skeleton`
-
-### Data
-`DataTable` · `Pagination`
-
-### Utility
-`Badge` · `AlertMessage` · `Divider` · `Kbd`
-
-## Theming
-
-Components use CSS custom properties (`--karbon-*`) + Tailwind. Import design tokens:
-
-```ts
-import '@karbonjs/ui-core/css'
+```bash
+cd playground && pnpm dev  # http://localhost:3333
 ```
 
-Dark/light theme support:
-
-```html
-<body data-theme="dark"> <!-- or class="karbon-dark" -->
-```
-
-See [docs/theming.md](docs/theming.md) for all available tokens.
-
-## Documentation
-
-- [Utils](docs/utils.md) — all utility functions with examples
-- [API Client](docs/api.md) — SSR + client setup, token refresh, proxy, rate limiting
-- [Auth](docs/auth.md) — roles, token manager, user cache
-- [Components](docs/components.md) — all 31 components with props
-- [Theming](docs/theming.md) — design tokens, dark/light mode
+Interactive demo of all 35 components with theme switcher, color palettes, and copy-pasteable code examples.
 
 ## Development
 
 ```bash
 pnpm install          # Install deps
 pnpm run build        # Build all packages
-pnpm run test         # Run tests (68 tests, vitest)
-pnpm run test:watch   # Watch mode
+pnpm run test         # Run tests
+cd playground && pnpm dev  # Start playground
 pnpm run publish:all  # Publish to npm
 ```
 
@@ -130,19 +138,20 @@ karbonjs/
 ├── packages/
 │   ├── utils/        → @karbonjs/utils      (0 deps)
 │   ├── types/        → @karbonjs/types      (0 deps)
-│   ├── api/          → @karbonjs/api        (depends on types, exports: ./server)
+│   ├── api/          → @karbonjs/api        (depends on types)
 │   ├── auth/         → @karbonjs/auth       (depends on types)
-│   ├── ui-core/      → @karbonjs/ui-core    (0 deps)
-│   ├── ui-svelte/    → @karbonjs/ui-svelte  (depends on ui-core, peer: svelte 5)
-│   └── ui-react/     → @karbonjs/ui-react   (depends on ui-core, peer: react 18/19)
-├── .github/workflows/ci.yml
-├── vitest.config.ts
-└── tsconfig.base.json
+│   ├── ui-core/      → @karbonjs/ui-core    (0 deps, CSS + types)
+│   ├── ui-svelte/    → @karbonjs/ui-svelte  (depends on ui-core)
+│   └── ui-react/     → @karbonjs/ui-react   (depends on ui-core)
+├── playground/       → Interactive demo (SvelteKit, not published)
+├── docs/             → Documentation
+└── vitest.config.ts
 ```
 
 ## Related
 
-- [Karbon Framework](https://crates.io/crates/karbon-framework) — Rust backend (Axum + SQLx)
+- [Karbon Framework](https://crates.io/crates/karbon-framework) — Rust backend (Axum + SQLx + Tera templates)
+- [Karbon CLI](https://crates.io/crates/karbon-cli) — `karbon dev`, `karbon build`, `karbon new`
 
 ## License
 

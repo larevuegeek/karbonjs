@@ -1,0 +1,289 @@
+/* @karbonjs/ui-core — Color palettes (Tailwind CSS v4 values) */
+
+:root {
+  /* ── Red ── */
+  --karbon-red-50: #fef2f2;
+  --karbon-red-100: #fee2e2;
+  --karbon-red-200: #fecaca;
+  --karbon-red-300: #fca5a5;
+  --karbon-red-400: #f87171;
+  --karbon-red-500: #ef4444;
+  --karbon-red-600: #dc2626;
+  --karbon-red-700: #b91c1c;
+  --karbon-red-800: #991b1b;
+  --karbon-red-900: #7f1d1d;
+  --karbon-red-950: #450a0a;
+
+  /* ── Orange ── */
+  --karbon-orange-50: #fff7ed;
+  --karbon-orange-100: #ffedd5;
+  --karbon-orange-200: #fed7aa;
+  --karbon-orange-300: #fdba74;
+  --karbon-orange-400: #fb923c;
+  --karbon-orange-500: #f97316;
+  --karbon-orange-600: #ea580c;
+  --karbon-orange-700: #c2410c;
+  --karbon-orange-800: #9a3412;
+  --karbon-orange-900: #7c2d12;
+  --karbon-orange-950: #431407;
+
+  /* ── Amber ── */
+  --karbon-amber-50: #fffbeb;
+  --karbon-amber-100: #fef3c7;
+  --karbon-amber-200: #fde68a;
+  --karbon-amber-300: #fcd34d;
+  --karbon-amber-400: #fbbf24;
+  --karbon-amber-500: #f59e0b;
+  --karbon-amber-600: #d97706;
+  --karbon-amber-700: #b45309;
+  --karbon-amber-800: #92400e;
+  --karbon-amber-900: #78350f;
+  --karbon-amber-950: #451a03;
+
+  /* ── Yellow ── */
+  --karbon-yellow-50: #fefce8;
+  --karbon-yellow-100: #fef9c3;
+  --karbon-yellow-200: #fef08a;
+  --karbon-yellow-300: #fde047;
+  --karbon-yellow-400: #facc15;
+  --karbon-yellow-500: #eab308;
+  --karbon-yellow-600: #ca8a04;
+  --karbon-yellow-700: #a16207;
+  --karbon-yellow-800: #854d0e;
+  --karbon-yellow-900: #713f12;
+  --karbon-yellow-950: #422006;
+
+  /* ── Lime ── */
+  --karbon-lime-50: #f7fee7;
+  --karbon-lime-100: #ecfccb;
+  --karbon-lime-200: #d9f99d;
+  --karbon-lime-300: #bef264;
+  --karbon-lime-400: #a3e635;
+  --karbon-lime-500: #84cc16;
+  --karbon-lime-600: #65a30d;
+  --karbon-lime-700: #4d7c0f;
+  --karbon-lime-800: #3f6212;
+  --karbon-lime-900: #365314;
+  --karbon-lime-950: #1a2e05;
+
+  /* ── Green ── */
+  --karbon-green-50: #f0fdf4;
+  --karbon-green-100: #dcfce7;
+  --karbon-green-200: #bbf7d0;
+  --karbon-green-300: #86efac;
+  --karbon-green-400: #4ade80;
+  --karbon-green-500: #22c55e;
+  --karbon-green-600: #16a34a;
+  --karbon-green-700: #15803d;
+  --karbon-green-800: #166534;
+  --karbon-green-900: #14532d;
+  --karbon-green-950: #052e16;
+
+  /* ── Emerald ── */
+  --karbon-emerald-50: #eafff5;
+  --karbon-emerald-100: #c9fede;
+  --karbon-emerald-200: #8ffcbd;
+  --karbon-emerald-300: #4ef59a;
+  --karbon-emerald-400: #1ed760;
+  --karbon-emerald-500: #1db954;
+  --karbon-emerald-600: #17a34a;
+  --karbon-emerald-700: #148c3f;
+  --karbon-emerald-800: #106b31;
+  --karbon-emerald-900: #0c5526;
+  --karbon-emerald-950: #052e15;
+
+  /* ── Teal ── */
+  --karbon-teal-50: #f0fdfa;
+  --karbon-teal-100: #ccfbf1;
+  --karbon-teal-200: #99f6e4;
+  --karbon-teal-300: #5eead4;
+  --karbon-teal-400: #2dd4bf;
+  --karbon-teal-500: #14b8a6;
+  --karbon-teal-600: #0d9488;
+  --karbon-teal-700: #0f766e;
+  --karbon-teal-800: #115e59;
+  --karbon-teal-900: #134e4a;
+  --karbon-teal-950: #042f2e;
+
+  /* ── Cyan ── */
+  --karbon-cyan-50: #ecfeff;
+  --karbon-cyan-100: #cffafe;
+  --karbon-cyan-200: #a5f3fc;
+  --karbon-cyan-300: #67e8f9;
+  --karbon-cyan-400: #22d3ee;
+  --karbon-cyan-500: #06b6d4;
+  --karbon-cyan-600: #0891b2;
+  --karbon-cyan-700: #0e7490;
+  --karbon-cyan-800: #155e75;
+  --karbon-cyan-900: #164e63;
+  --karbon-cyan-950: #083344;
+
+  /* ── Sky ── */
+  --karbon-sky-50: #f0f9ff;
+  --karbon-sky-100: #e0f2fe;
+  --karbon-sky-200: #bae6fd;
+  --karbon-sky-300: #7dd3fc;
+  --karbon-sky-400: #38bdf8;
+  --karbon-sky-500: #0ea5e9;
+  --karbon-sky-600: #0284c7;
+  --karbon-sky-700: #0369a1;
+  --karbon-sky-800: #075985;
+  --karbon-sky-900: #0c4a6e;
+  --karbon-sky-950: #082f49;
+
+  /* ── Blue ── */
+  --karbon-blue-50: #eff6ff;
+  --karbon-blue-100: #dbeafe;
+  --karbon-blue-200: #bfdbfe;
+  --karbon-blue-300: #93c5fd;
+  --karbon-blue-400: #60a5fa;
+  --karbon-blue-500: #3b82f6;
+  --karbon-blue-600: #2563eb;
+  --karbon-blue-700: #1d4ed8;
+  --karbon-blue-800: #1e40af;
+  --karbon-blue-900: #1e3a8a;
+  --karbon-blue-950: #172554;
+
+  /* ── Indigo ── */
+  --karbon-indigo-50: #eef2ff;
+  --karbon-indigo-100: #e0e7ff;
+  --karbon-indigo-200: #c7d2fe;
+  --karbon-indigo-300: #a5b4fc;
+  --karbon-indigo-400: #818cf8;
+  --karbon-indigo-500: #6366f1;
+  --karbon-indigo-600: #4f46e5;
+  --karbon-indigo-700: #4338ca;
+  --karbon-indigo-800: #3730a3;
+  --karbon-indigo-900: #312e81;
+  --karbon-indigo-950: #1e1b4b;
+
+  /* ── Violet ── */
+  --karbon-violet-50: #f5f3ff;
+  --karbon-violet-100: #ede9fe;
+  --karbon-violet-200: #ddd6fe;
+  --karbon-violet-300: #c4b5fd;
+  --karbon-violet-400: #a78bfa;
+  --karbon-violet-500: #8b5cf6;
+  --karbon-violet-600: #7c3aed;
+  --karbon-violet-700: #6d28d9;
+  --karbon-violet-800: #5b21b6;
+  --karbon-violet-900: #4c1d95;
+  --karbon-violet-950: #2e1065;
+
+  /* ── Purple ── */
+  --karbon-purple-50: #faf5ff;
+  --karbon-purple-100: #f3e8ff;
+  --karbon-purple-200: #e9d5ff;
+  --karbon-purple-300: #d8b4fe;
+  --karbon-purple-400: #c084fc;
+  --karbon-purple-500: #a855f7;
+  --karbon-purple-600: #9333ea;
+  --karbon-purple-700: #7e22ce;
+  --karbon-purple-800: #6b21a8;
+  --karbon-purple-900: #581c87;
+  --karbon-purple-950: #3b0764;
+
+  /* ── Fuchsia ── */
+  --karbon-fuchsia-50: #fdf4ff;
+  --karbon-fuchsia-100: #fae8ff;
+  --karbon-fuchsia-200: #f5d0fe;
+  --karbon-fuchsia-300: #f0abfc;
+  --karbon-fuchsia-400: #e879f9;
+  --karbon-fuchsia-500: #d946ef;
+  --karbon-fuchsia-600: #c026d3;
+  --karbon-fuchsia-700: #a21caf;
+  --karbon-fuchsia-800: #86198f;
+  --karbon-fuchsia-900: #701a75;
+  --karbon-fuchsia-950: #4a044e;
+
+  /* ── Pink ── */
+  --karbon-pink-50: #fdf2f8;
+  --karbon-pink-100: #fce7f3;
+  --karbon-pink-200: #fbcfe8;
+  --karbon-pink-300: #f9a8d4;
+  --karbon-pink-400: #f472b6;
+  --karbon-pink-500: #ec4899;
+  --karbon-pink-600: #db2777;
+  --karbon-pink-700: #be185d;
+  --karbon-pink-800: #9d174d;
+  --karbon-pink-900: #831843;
+  --karbon-pink-950: #500724;
+
+  /* ── Rose ── */
+  --karbon-rose-50: #fff1f2;
+  --karbon-rose-100: #ffe4e6;
+  --karbon-rose-200: #fecdd3;
+  --karbon-rose-300: #fda4af;
+  --karbon-rose-400: #fb7185;
+  --karbon-rose-500: #f43f5e;
+  --karbon-rose-600: #e11d48;
+  --karbon-rose-700: #be123c;
+  --karbon-rose-800: #9f1239;
+  --karbon-rose-900: #881337;
+  --karbon-rose-950: #4c0519;
+
+  /* ── Slate ── */
+  --karbon-slate-50: #f8fafc;
+  --karbon-slate-100: #f1f5f9;
+  --karbon-slate-200: #e2e8f0;
+  --karbon-slate-300: #cbd5e1;
+  --karbon-slate-400: #94a3b8;
+  --karbon-slate-500: #64748b;
+  --karbon-slate-600: #475569;
+  --karbon-slate-700: #334155;
+  --karbon-slate-800: #1e293b;
+  --karbon-slate-900: #0f172a;
+  --karbon-slate-950: #020617;
+
+  /* ── Gray ── */
+  --karbon-gray-50: #f9fafb;
+  --karbon-gray-100: #f3f4f6;
+  --karbon-gray-200: #e5e7eb;
+  --karbon-gray-300: #d1d5db;
+  --karbon-gray-400: #9ca3af;
+  --karbon-gray-500: #6b7280;
+  --karbon-gray-600: #4b5563;
+  --karbon-gray-700: #374151;
+  --karbon-gray-800: #1f2937;
+  --karbon-gray-900: #111827;
+  --karbon-gray-950: #030712;
+
+  /* ── Zinc ── */
+  --karbon-zinc-50: #fafafa;
+  --karbon-zinc-100: #f4f4f5;
+  --karbon-zinc-200: #e4e4e7;
+  --karbon-zinc-300: #d4d4d8;
+  --karbon-zinc-400: #a1a1aa;
+  --karbon-zinc-500: #71717a;
+  --karbon-zinc-600: #52525b;
+  --karbon-zinc-700: #3f3f46;
+  --karbon-zinc-800: #27272a;
+  --karbon-zinc-900: #18181b;
+  --karbon-zinc-950: #09090b;
+
+  /* ── Neutral ── */
+  --karbon-neutral-50: #fafafa;
+  --karbon-neutral-100: #f5f5f5;
+  --karbon-neutral-200: #e5e5e5;
+  --karbon-neutral-300: #d4d4d4;
+  --karbon-neutral-400: #a3a3a3;
+  --karbon-neutral-500: #737373;
+  --karbon-neutral-600: #525252;
+  --karbon-neutral-700: #404040;
+  --karbon-neutral-800: #262626;
+  --karbon-neutral-900: #171717;
+  --karbon-neutral-950: #0a0a0a;
+
+  /* ── Stone ── */
+  --karbon-stone-50: #fafaf9;
+  --karbon-stone-100: #f5f5f4;
+  --karbon-stone-200: #e7e5e4;
+  --karbon-stone-300: #d6d3d1;
+  --karbon-stone-400: #a8a29e;
+  --karbon-stone-500: #78716c;
+  --karbon-stone-600: #57534e;
+  --karbon-stone-700: #44403c;
+  --karbon-stone-800: #292524;
+  --karbon-stone-900: #1c1917;
+  --karbon-stone-950: #0c0a09;
+}

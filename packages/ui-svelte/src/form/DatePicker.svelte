@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { FormVariant } from '@karbonjs/ui-core'
+  import type { FormVariant, DatePickerClasses, ButtonColor } from '@karbonjs/ui-core'
 
   interface Props {
     name: string
@@ -12,6 +12,8 @@
     required?: boolean
     disabled?: boolean
     variant?: FormVariant
+    color?: ButtonColor
+    classes?: DatePickerClasses
     class?: string
     onchange?: (e: Event) => void
   }
@@ -27,16 +29,21 @@
     required = false,
     disabled = false,
     variant = 'dark',
+    color,
+    classes,
     class: className = '',
     onchange
   }: Props = $props()
 
   let showCalendar = $state(false)
+  let focused = $state(false)
+
+  const focusColor = $derived(color ? `var(--karbon-${color}-500)` : 'var(--karbon-primary)')
 
   const themes = {
     dark: {
       label: 'text-[11px] font-medium text-gray-500 uppercase tracking-wider',
-      input: 'border-white/8 bg-white/3 text-white focus:border-[var(--karbon-primary)]/50 focus:bg-white/5 focus:ring-[3px] focus:ring-[var(--karbon-primary)]/8',
+      input: 'border-white/8 bg-white/3 text-white',
       error: 'text-red-400',
       calendar: 'bg-[var(--karbon-bg-card,#0a0820)] border-white/10 text-white',
       dayHover: 'hover:bg-white/10',
@@ -44,7 +51,7 @@
     },
     light: {
       label: 'text-sm font-medium text-gray-700',
-      input: 'border-gray-300 bg-white text-gray-900 focus:border-[var(--karbon-primary)] focus:ring-2 focus:ring-[var(--karbon-primary)]/20',
+      input: 'border-gray-300 bg-white text-gray-900',
       error: 'text-[var(--karbon-danger)]',
       calendar: 'bg-white border-gray-200 text-gray-900',
       dayHover: 'hover:bg-gray-100',
@@ -137,9 +144,9 @@
 
 <svelte:window onclick={() => showCalendar = false} />
 
-<div class="space-y-1.5 {className}">
+<div class="space-y-1.5 {classes?.root ?? ''} {className}">
   {#if label}
-    <label for={name} class="{theme.label} block mb-1.5">{label}</label>
+    <label for={name} class="{theme.label} block mb-1.5 {classes?.label ?? ''}">{label}</label>
   {/if}
 
   <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -148,7 +155,10 @@
     <button
       type="button"
       onclick={() => { if (!disabled) showCalendar = !showCalendar }}
-      class="w-full rounded-lg border px-3 py-2.5 md:py-3 text-[13px] md:text-sm text-left focus:outline-none transition-all {theme.input} {error ? 'border-red-500/50' : ''} {!value ? 'text-gray-500' : ''} cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      onfocus={() => focused = true}
+      onblur={() => focused = false}
+      class="w-full rounded-lg border px-3 py-2.5 md:py-3 text-[13px] md:text-sm text-left focus:outline-none transition-all {theme.input} {error ? 'border-red-500/50' : ''} {!value ? 'text-gray-500' : ''} cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed {classes?.trigger ?? ''}"
+      style={focused ? `border-color: ${focusColor}; box-shadow: 0 0 0 3px color-mix(in srgb, ${focusColor} 12%, transparent);` : ''}
       {disabled}
     >
       {value ? formatDisplay(value) : placeholder || 'Sélectionner une date'}
@@ -158,7 +168,7 @@
     <input type="hidden" {name} bind:value {required} {onchange} />
 
     {#if showCalendar}
-      <div class="absolute z-50 mt-1 w-72 rounded-xl border shadow-xl p-3 {theme.calendar}">
+      <div class="absolute z-50 mt-1 w-72 rounded-xl border shadow-xl p-3 {theme.calendar} {classes?.calendar ?? ''}">
         <!-- Header -->
         <div class="flex items-center justify-between mb-3">
           <button type="button" onclick={prevMonth} aria-label="Mois précédent" class="p-1 rounded-lg {theme.dayHover} cursor-pointer">
@@ -184,10 +194,10 @@
               type="button"
               onclick={() => selectDay(day)}
               class="h-8 w-full rounded-lg text-xs font-medium transition-colors cursor-pointer
-                {isSelected(day) ? 'bg-[var(--karbon-primary)] text-white' : ''}
-                {isToday(day) && !isSelected(day) ? 'ring-1 ring-[var(--karbon-primary)]' : ''}
+                {isToday(day) && !isSelected(day) ? 'ring-1' : ''}
                 {!day.current ? theme.dayOther : ''}
                 {!isSelected(day) ? theme.dayHover : ''}"
+              style={isSelected(day) ? `background-color: ${focusColor}; color: white;` : isToday(day) ? `--tw-ring-color: ${focusColor};` : ''}
             >
               {day.date}
             </button>
@@ -198,6 +208,6 @@
   </div>
 
   {#if error}
-    <p class="text-xs {theme.error}">{error}</p>
+    <p class="text-xs {theme.error} {classes?.error ?? ''}">{error}</p>
   {/if}
 </div>

@@ -11,6 +11,7 @@
     fallback?: string
     imgbox?: boolean
     class?: string
+    classes?: { root?: string, img?: string }
     onclick?: () => void
   }
 
@@ -23,6 +24,7 @@
     fallback = '',
     imgbox = false,
     class: className = '',
+    classes = {},
     onclick
   }: Props = $props()
 
@@ -65,12 +67,12 @@
 </script>
 
 {#if isClickable}
-  <button type="button" onclick={handleClick} class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} cursor-pointer bg-transparent border-none p-0 m-0 block {className}">
-    <img src={imgSrc} {alt} onerror={handleError} class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]}" loading="lazy" />
+  <button type="button" onclick={handleClick} class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} cursor-pointer bg-transparent border-none p-0 m-0 block {classes?.root ?? className}">
+    <img src={imgSrc} {alt} onerror={handleError} class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]} {classes?.img ?? ''}" loading="lazy" />
   </button>
 {:else}
-  <div class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} {className}">
-    <img src={imgSrc} {alt} onerror={handleError} class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]}" loading="lazy" />
+  <div class="group overflow-hidden {roundedClasses[rounded]} {aspectClasses[aspect]} {classes?.root ?? className}">
+    <img src={imgSrc} {alt} onerror={handleError} class="w-full h-full object-cover transition-all duration-300 {hoverClasses[hover]} {classes?.img ?? ''}" loading="lazy" />
   </div>
 {/if}
 

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import type { AvatarSize } from '@karbonjs/ui-core'
 
 export interface AvatarProps {
@@ -6,6 +7,8 @@ export interface AvatarProps {
   alt?: string
   name?: string
   size?: AvatarSize
+  color?: string
+  classes?: { root?: string }
   className?: string
 }
 
@@ -17,13 +20,26 @@ const sizeClasses: Record<string, string> = {
   xl: 'w-20 h-20 text-2xl'
 }
 
-export function Avatar({ src, alt = '', name = '', size = 'md', className = '' }: AvatarProps) {
+export function Avatar({ src, alt = '', name = '', size = 'md', color, classes = {}, className = '' }: AvatarProps) {
   const [errored, setErrored] = useState(false)
   const initials = (name || alt || 'A').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const showImage = src && !errored
 
+  const colorStyle = useMemo((): CSSProperties | undefined => {
+    if (!color) return undefined
+    return {
+      background: `color-mix(in srgb,var(--karbon-${color}-500) 15%,transparent)`,
+      color: `var(--karbon-${color}-400)`
+    }
+  }, [color])
+
+  const defaultBgClass = color ? '' : 'bg-[var(--karbon-bg-2,#e8e6f0)] text-[var(--karbon-text-2,#5a567e)]'
+
   return (
-    <div className={`relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-[var(--karbon-bg-2,#e8e6f0)] text-[var(--karbon-text-2,#5a567e)] font-semibold ${sizeClasses[size]} ${className}`}>
+    <div
+      className={`relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden font-semibold ${defaultBgClass} ${sizeClasses[size]} ${classes?.root ?? className}`}
+      style={colorStyle}
+    >
       {showImage ? (
         <img src={src} alt={alt || name} onError={() => setErrored(true)} className="w-full h-full object-cover" />
       ) : (
