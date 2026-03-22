@@ -49,6 +49,7 @@ formatSize(2_500_000)          // "2.4 Mo"
 formatSize(2_500_000, 'en')    // "2.4 MB"
 formatCount(12345)             // "12 345"
 clamp(150, 0, 100)            // 100
+clamp(5, 10, 0)               // 5 (auto-swaps min/max)
 formatPercent(0.856)           // "85.6%"
 formatPrice(29.99)             // "29,99 €"
 formatPrice(29.99, 'USD', 'en-US')  // "$29.99"

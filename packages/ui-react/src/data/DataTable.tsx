@@ -169,9 +169,11 @@ export function DataTable({
       ...filteredData.map(row => cols.map(c => `"${String(row[c.key] ?? '').replace(/"/g, '""')}"`).join(',')),
     ].join('\n')
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    a.href = url
     a.download = `${exportFilename}.csv`
     a.click()
+    URL.revokeObjectURL(url)
   }, [visibleColumns, filteredData, exportFilename])
 
   const pad = compact ? 'px-3 py-1.5' : 'px-4 py-3'

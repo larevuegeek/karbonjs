@@ -102,7 +102,8 @@ pnpm run publish:all  # Publish to npm
 - [x] @karbonjs/ui-react — 30 React components, same set (editor React à venir)
 - [x] Testing — 68 tests (vitest) across utils, auth, api
 - [x] CI/CD — GitHub Actions (test Node 20/22)
-- [x] Security audit — ReDoS fix, timer cleanup, token validation, error truncation, SameSite enforcement, XSS escaping in editor
+- [x] Security audit v1 — ReDoS fix, timer cleanup, token validation, error truncation, SameSite enforcement, XSS escaping in editor
+- [x] Security audit v2 (v0.3.1) — proxy CSRF strict origin check, decodeURI crash guard, X-Forwarded-For sanitization, RichTextEditor mount XSS fix, user-cache 64-bit hash, client 401 loop guard, AbortError Node.js compat, number input validation, DataTable memory leak fix
 - [x] Documentation — docs/ (utils, api, auth, components, theming)
 
 ## What's Missing / TODO

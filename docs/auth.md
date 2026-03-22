@@ -100,3 +100,5 @@ if (!user) {
 - LRU eviction when maxSize reached
 - Automatic expired entry cleanup before eviction
 - TTL-based expiration (default 2 minutes)
+- Collision-resistant 64-bit dual-seed hash for token keys
+- `destroy()` method to stop cleanup timer and free resources

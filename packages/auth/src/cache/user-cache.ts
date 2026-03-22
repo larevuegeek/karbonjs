@@ -13,13 +13,18 @@ interface CacheEntry {
 }
 
 function hashToken(token: string): string {
-  let hash = 0
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
   for (let i = 0; i < token.length; i++) {
-    const char = token.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
+    const ch = token.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
   }
-  return hash.toString(36)
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507)
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507)
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (h2 >>> 0).toString(36) + (h1 >>> 0).toString(36)
 }
 
 /**
@@ -41,7 +46,7 @@ export function createUserCache(opts: UserCacheOptions = {}) {
   const cleanupTimer = setInterval(() => {
     purgeExpired()
   }, 60_000) // every minute
-  if (typeof cleanupTimer.unref === 'function') cleanupTimer.unref()
+  if (typeof cleanupTimer === 'object' && typeof (cleanupTimer as any).unref === 'function') (cleanupTimer as any).unref()
 
   return {
     get(token: string): AuthUser | null {

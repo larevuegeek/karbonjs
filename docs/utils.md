@@ -104,13 +104,6 @@ formatPrice(29.99)                     // "29,99 €"
 formatPrice(29.99, 'USD', 'en-US')     // "$29.99"
 ```
 
-### `formatSize(bytes, locale?)`
-
-```ts
-formatSize(1536)       // "1.5 Ko"
-formatSize(1536, 'en') // "1.5 KB"
-```
-
 ### `formatCount(n, locale?)` / `formatPercent(ratio, decimals?)`
 
 ```ts
@@ -121,9 +114,22 @@ formatPercent(0.856, 0)  // "86%"
 
 ### `clamp(value, min, max)` / `randomInt(min, max)`
 
+Auto-swaps if `min > max`.
+
 ```ts
 clamp(15, 0, 10)   // 10
+clamp(5, 10, 0)    // 5 (auto-swapped to min=0, max=10)
 randomInt(1, 100)   // random number 1-100
+```
+
+### `formatSize(bytes, locale?)`
+
+Returns `"0 o"` / `"0 B"` for negative or non-finite values.
+
+```ts
+formatSize(1536)       // "1.5 Ko"
+formatSize(-1)         // "0 o"
+formatSize(NaN)        // "0 o"
 ```
 
 ## Debounce & Throttle

@@ -375,7 +375,7 @@
   }
 
   onMount(() => {
-    if (value) editor.innerHTML = value
+    if (value) editor.innerHTML = cleanHtml(value)
     updateCounts()
   })
 

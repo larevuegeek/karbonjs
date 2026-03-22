@@ -39,18 +39,22 @@ const tokenManager = createTokenManager({
   apiUrl: 'http://localhost:3005/api/v1',
   refreshEndpoint: '/auth/refresh',
   onRefresh: (tokens) => {
-    // Set new cookies
     cookies.set('token', tokens.token)
     cookies.set('refresh_token', tokens.refreshToken)
   },
   onExpired: () => {
-    // Clear session
     cookies.delete('token')
   },
 })
 
 const newTokens = await tokenManager.refresh(refreshToken, sessionId)
 ```
+
+Features: AbortController timeout, concurrent dedup, JWT structure validation.
+
+### User Cache
+
+Collision-resistant 64-bit token hashing, LRU eviction, TTL expiration, `destroy()` for cleanup.
 
 ## Role Hierarchy
 

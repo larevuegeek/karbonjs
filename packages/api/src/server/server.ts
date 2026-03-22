@@ -32,7 +32,7 @@ export function createServerApi(baseUrl: string, defaultTimeout = 15_000) {
         signal: controller.signal,
       })
     } catch (err) {
-      const message = err instanceof DOMException && err.name === 'AbortError'
+      const message = (err instanceof Error && err.name === 'AbortError')
         ? 'Request timeout'
         : 'Service temporarily unavailable'
       return { ok: false, status: 503, message } as T

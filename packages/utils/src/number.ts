@@ -3,6 +3,7 @@
  * formatSize(1536) → "1.5 Ko" (fr) or "1.5 KB" (en)
  */
 export function formatSize(bytes: number, locale = 'fr'): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return '0 ' + (locale.startsWith('fr') ? 'o' : 'B')
   const fr = locale.startsWith('fr')
   const units = fr ? ['o', 'Ko', 'Mo', 'Go', 'To'] : ['B', 'KB', 'MB', 'GB', 'TB']
 
@@ -25,6 +26,7 @@ export function formatCount(n: number, locale = 'fr-FR'): string {
  * Clamp a value between min and max.
  */
 export function clamp(value: number, min: number, max: number): number {
+  if (min > max) [min, max] = [max, min]
   return Math.min(Math.max(value, min), max)
 }
 
@@ -53,5 +55,6 @@ export function formatPrice(amount: number, currency = 'EUR', locale = 'fr-FR'):
  * Generate a random integer between min and max (inclusive).
  */
 export function randomInt(min: number, max: number): number {
+  if (min > max) [min, max] = [max, min]
   return Math.floor(Math.random() * (max - min + 1)) + min
 }

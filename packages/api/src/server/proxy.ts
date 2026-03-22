@@ -98,7 +98,12 @@ export function createProxy(config: ProxyConfig) {
     const rawPath = params.path ?? ''
 
     // 1. Sanitize path
-    const decodedPath = decodeURIComponent(rawPath)
+    let decodedPath: string
+    try {
+      decodedPath = decodeURIComponent(rawPath)
+    } catch {
+      return new Response('Forbidden path', { status: 400 })
+    }
     if (decodedPath.includes('..') || rawPath.includes('%2e') || rawPath.includes('%2E') || rawPath.includes('//')) {
       return new Response('Forbidden path', { status: 403 })
     }
@@ -135,8 +140,15 @@ export function createProxy(config: ProxyConfig) {
       if (!origin) {
         return jsonResponse(403, 'CSRF: Origin header required')
       }
-      if (host && !origin.includes(host)) {
-        return jsonResponse(403, 'CSRF: Origin mismatch')
+      if (host) {
+        try {
+          const originHost = new URL(origin).host
+          if (originHost !== host) {
+            return jsonResponse(403, 'CSRF: Origin mismatch')
+          }
+        } catch {
+          return jsonResponse(403, 'CSRF: Invalid origin')
+        }
       }
     }
 
@@ -150,6 +162,7 @@ export function createProxy(config: ProxyConfig) {
     const cookies = request.headers.get('cookie')
     if (cookies) headers.set('cookie', cookies)
 
+    headers.delete('x-forwarded-for')
     headers.set('x-forwarded-for', clientIp)
 
     // 7. Stream body with size check

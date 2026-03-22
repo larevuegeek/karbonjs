@@ -51,8 +51,9 @@ const res = await api('/admin/stats', { token: adminToken })
 
 - Auto token refresh with 10s timeout (prevents hanging)
 - Concurrent refresh deduplication
+- Refresh loop guard (max 3 consecutive failures before stopping)
 - Error messages truncated to 500 chars
-- Distinguishes timeout vs network errors
+- Distinguishes timeout vs network errors (compatible Node.js + browser)
 
 ## Server-side (SSR)
 
@@ -97,3 +98,32 @@ On success: `{ ok: true, ...data }` (server response merged)
 On error: `{ ok: false, status: 404, message: "Not found" }`
 On timeout: `{ ok: false, status: 0, message: "Request timeout" }`
 On network error: `{ ok: false, status: 503, message: "Service temporarily unavailable" }`
+
+## API Proxy (SvelteKit)
+
+Configurable catch-all proxy with built-in security.
+
+```ts
+import { createProxy } from '@karbonjs/api/server'
+
+export const { GET, POST, PUT, PATCH, DELETE } = createProxy({
+  backend: 'http://localhost:8080',
+  prefix: '/api',
+  blockedPrefixes: ['internal'],
+  csrf: true,
+  rateLimit: {
+    'auth/login': { max: 20, windowSec: 60 },
+    '*': { max: 200, windowSec: 60 },
+  },
+})
+```
+
+### Security features
+
+- Path sanitization (blocks `../`, `//`, encoded traversal)
+- Malformed URI handling (returns 400 on invalid percent-encoding)
+- CSRF protection with strict origin validation (`new URL(origin).host === host`)
+- X-Forwarded-For header sanitization (strips client-supplied headers before forwarding)
+- Rate limiting (sliding window, per IP + route)
+- Body size limit (default 10 MB)
+- Blocked path prefixes (default: `internal`)

@@ -19,6 +19,7 @@ export interface ClientApiConfig {
  */
 export function createClientApi(config: ClientApiConfig) {
   let refreshPromise: Promise<string | null> | null = null
+  let refreshFailures = 0
 
   return async function api<T extends ApiResult = ApiResult>(
     endpoint: string,
@@ -60,8 +61,8 @@ export function createClientApi(config: ClientApiConfig) {
     try {
       let res = await doFetch(token)
 
-      // Auto-refresh on 401
-      if (res.status === 401 && config.refreshToken) {
+      // Auto-refresh on 401 (with loop guard)
+      if (res.status === 401 && config.refreshToken && refreshFailures < 3) {
         if (!refreshPromise) {
           refreshPromise = Promise.race([
             config.refreshToken(),
@@ -72,7 +73,14 @@ export function createClientApi(config: ClientApiConfig) {
         const newToken = await refreshPromise
         if (newToken) {
           res = await doFetch(newToken)
+          if (res.status === 401) {
+            refreshFailures++
+            config.onAuthFailure?.()
+            return { ok: false, status: 401, message: 'Authentication failed' } as T
+          }
+          refreshFailures = 0
         } else {
+          refreshFailures++
           config.onAuthFailure?.()
           return { ok: false, status: 401, message: 'Authentication failed' } as T
         }
@@ -94,7 +102,7 @@ export function createClientApi(config: ClientApiConfig) {
       const data = await res.json()
       return { ...data, ok: true } as T
     } catch (err) {
-      const message = err instanceof DOMException && err.name === 'AbortError'
+      const message = (err instanceof Error && err.name === 'AbortError')
         ? 'Request timeout'
         : 'Network error'
       return { ok: false, status: 0, message } as T

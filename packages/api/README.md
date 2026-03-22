@@ -50,9 +50,24 @@ const api = createClientApi({
   },
 })
 
-// Auto-refreshes token on 401
+// Auto-refreshes token on 401 (max 3 retries, then calls onAuthFailure)
 const articles = await api('/articles')
 ```
+
+## API Proxy (SvelteKit)
+
+```typescript
+import { createProxy } from '@karbonjs/api/server'
+
+export const { GET, POST, PUT, PATCH, DELETE } = createProxy({
+  backend: 'http://localhost:8080',
+  prefix: '/api',
+  csrf: true,
+  rateLimit: { '*': { max: 200, windowSec: 60 } },
+})
+```
+
+Security: path sanitization, CSRF strict origin check, X-Forwarded-For sanitization, rate limiting, body size limit.
 
 ## Options
 

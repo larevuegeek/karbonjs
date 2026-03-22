@@ -1,4 +1,4 @@
-import type { ButtonColor } from './button'
+import type { ButtonColor } from './button.js'
 
 export type FormVariant = 'dark' | 'light'
 export type FormInputVariant = 'outlined' | 'filled' | 'underline'
