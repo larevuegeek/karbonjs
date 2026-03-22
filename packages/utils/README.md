@@ -75,6 +75,32 @@ getCookie('theme')              // "dark"
 deleteCookie('theme')
 ```
 
+## Image Resizer Helper
+
+URL builder for the [Karbon ImgResizer](https://crates.io/crates/karbon-framework) service.
+
+```ts
+import { img } from '@karbonjs/utils'
+
+// Basic resize
+img('/files/uploads/photo.jpg', { w: 320, h: 180 })
+// → "/files/r/320x180/uploads/photo.jpg"
+
+// Width only (auto height)
+img('/files/uploads/photo.jpg', { w: 640 })
+// → "/files/r/640x0/uploads/photo.jpg"
+
+// Cover crop + WebP + quality
+img('/files/uploads/photo.jpg', { w: 320, h: 180, mode: 'cover', format: 'webp', quality: 85 })
+// → "/files/r/320x180_cover_q85.webp/uploads/photo.jpg"
+
+// Grayscale + blur
+img('/files/uploads/photo.jpg', { w: 400, h: 400, grayscale: true, blur: 2 })
+// → "/files/r/400x400_gray_blur2/uploads/photo.jpg"
+```
+
+Options: `w`, `h`, `mode` (fit/cover/stretch), `format` (webp/jpeg/png), `quality` (1-100), `grayscale`, `blur`, `anchor`.
+
 ## License
 
 MIT

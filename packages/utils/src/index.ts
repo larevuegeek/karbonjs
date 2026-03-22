@@ -10,3 +10,6 @@ export type { Cancelable } from './debounce.js'
 
 export { setCookie, getCookie, deleteCookie } from './cookie.js'
 export type { CookieOptions } from './cookie.js'
+
+export { img } from './image.js'
+export type { ImgOptions } from './image.js'
