@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/ui-react",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Karbon UI components for React / Next.js",
   "type": "module",
   "main": "dist/index.js",
