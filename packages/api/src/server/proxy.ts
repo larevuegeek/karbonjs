@@ -94,6 +94,7 @@ export function createProxy(config: ProxyConfig) {
   }
 
   const handler: Handler = async (event) => {
+   try {
     const { request, params, url } = event
     const rawPath = params.path ?? ''
 
@@ -179,17 +180,25 @@ export function createProxy(config: ProxyConfig) {
     }
 
     // 8. Proxy to backend
+    const targetUrl = `${backend}${path}`
     let apiRes: Response
     try {
-      apiRes = await fetch(`${backend}${path}`, {
+      apiRes = await fetch(targetUrl, {
         method: request.method,
         headers,
         body,
         // @ts-expect-error — duplex required for streaming body in Node
         duplex: body ? 'half' : undefined,
       })
-    } catch {
+    } catch (err) {
+      console.error(`[proxy] Backend unreachable: ${request.method} ${targetUrl}`, err)
       return jsonResponse(502, 'Backend unreachable')
+    }
+
+    // Log backend errors for debugging
+    if (apiRes.status >= 500) {
+      const errBody = await apiRes.clone().text().catch(() => '')
+      console.error(`[proxy] Backend ${apiRes.status}: ${request.method} ${targetUrl}`, errBody)
     }
 
     // 9. Build response — stream back
@@ -216,6 +225,13 @@ export function createProxy(config: ProxyConfig) {
       status: apiRes.status,
       headers: responseHeaders,
     })
+   } catch (err) {
+    console.error('[proxy] Unhandled error:', err)
+    return new Response(JSON.stringify({ message: 'Proxy error' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+   }
   }
 
   return {
