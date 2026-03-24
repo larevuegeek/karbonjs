@@ -166,17 +166,21 @@ export function createProxy(config: ProxyConfig) {
     headers.delete('x-forwarded-for')
     headers.set('x-forwarded-for', clientIp)
 
-    // 7. Stream body with size check
-    let body: ReadableStream<Uint8Array> | null = null
+    // 7. Read body with size check
+    let body: string | null = null
     if (request.method !== 'GET' && request.method !== 'HEAD' && request.body) {
       const contentLength = request.headers.get('content-length')
       if (contentLength && parseInt(contentLength) > maxBodySize) {
         return jsonResponse(413, 'Request too large')
       }
-      // NOTE: When no Content-Length header is present (e.g. chunked transfer encoding),
-      // the body size check above is bypassed. The backend server MUST enforce its own
-      // body size limits to prevent abuse via chunked requests.
-      body = request.body
+      try {
+        body = await request.text()
+        if (body.length > maxBodySize) {
+          return jsonResponse(413, 'Request too large')
+        }
+      } catch {
+        return jsonResponse(400, 'Failed to read request body')
+      }
     }
 
     // 8. Proxy to backend
@@ -186,9 +190,7 @@ export function createProxy(config: ProxyConfig) {
       apiRes = await fetch(targetUrl, {
         method: request.method,
         headers,
-        body,
-        // @ts-expect-error — duplex required for streaming body in Node
-        duplex: body ? 'half' : undefined,
+        body: body ?? undefined,
       })
     } catch (err) {
       console.error(`[proxy] Backend unreachable: ${request.method} ${targetUrl}`, err)
