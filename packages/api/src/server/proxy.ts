@@ -153,17 +153,14 @@ export function createProxy(config: ProxyConfig) {
       }
     }
 
-    // 6. Build headers
+    // 6. Build headers — forward all original headers except hop-by-hop
+    const skipHeaders = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'x-forwarded-for'])
     const headers = new Headers()
-    headers.set('content-type', request.headers.get('content-type') || 'application/json')
-
-    const auth = request.headers.get('authorization')
-    if (auth) headers.set('authorization', auth)
-
-    const cookies = request.headers.get('cookie')
-    if (cookies) headers.set('cookie', cookies)
-
-    headers.delete('x-forwarded-for')
+    request.headers.forEach((value, key) => {
+      if (!skipHeaders.has(key.toLowerCase())) {
+        headers.set(key, value)
+      }
+    })
     headers.set('x-forwarded-for', clientIp)
 
     // 7. Read body with size check
