@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 import type { ButtonColor } from '@karbonjs/ui-core'
 
-interface Props {
+export interface BadgeProps {
   variant?: 'soft' | 'solid' | 'outline' | 'dot' | 'flat'
   color?: ButtonColor
   size?: 'xs' | 'sm' | 'md' | 'lg'
@@ -77,7 +77,7 @@ export function Badge({
   classes = {},
   onClose,
   children,
-}: Props) {
+}: BadgeProps) {
   const accent = color ? c(color, 500) : 'var(--karbon-primary)'
   const accentLight = color ? c(color, 400) : 'var(--karbon-primary)'
 

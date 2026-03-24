@@ -89,7 +89,7 @@ export function Input({
   onBlur,
   onKeyDown,
   onValueChange
-}: FormInputProps) {
+}: InputProps) {
   const [focused, setFocused] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ButtonVariant, ButtonSize, ButtonColor, ButtonShape } from '@karbonjs/ui-core'
 import type { ReactNode } from 'react'
 
-interface Props {
+export interface ButtonProps {
   variant?: ButtonVariant
   size?: ButtonSize
   color?: ButtonColor
@@ -134,7 +134,7 @@ export function Button({
   classes = {},
   onClick,
   children,
-}: Props) {
+}: ButtonProps) {
   const [hovered, setHovered] = useState(false)
   const [active, setActive] = useState(false)
 

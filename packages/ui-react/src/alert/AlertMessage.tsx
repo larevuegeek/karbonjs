@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { AlertType, ButtonColor } from '@karbonjs/ui-core'
 
-interface Props {
+export interface AlertMessageProps {
   type?: AlertType
   variant?: 'soft' | 'filled' | 'outline' | 'bordered'
   color?: ButtonColor
@@ -65,7 +65,7 @@ export function AlertMessage({
   classes = {},
   onDismiss,
   children,
-}: Props) {
+}: AlertMessageProps) {
   const [visible, setVisible] = useState(true)
 
   const baseColor = color ? `var(--karbon-${color}-500)` : typeColors[type]

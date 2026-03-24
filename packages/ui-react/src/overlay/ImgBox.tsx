@@ -9,7 +9,7 @@ export interface ImgBoxProps {
   captions?: string[]
   className?: string
   classes?: { root?: string; backdrop?: string; image?: string }
-  onclose: () => void
+  onClose: () => void
   onIndexChange?: (index: number) => void
 }
 
@@ -28,7 +28,7 @@ export function ImgBox({
   captions = [],
   className = '',
   classes = {},
-  onclose,
+  onClose,
   onIndexChange,
 }: ImgBoxProps) {
   const [index, setIndex] = useState(controlledIndex)
@@ -64,8 +64,8 @@ export function ImgBox({
 
   const close = useCallback(() => {
     setVisible(false)
-    setTimeout(() => onclose(), 350)
-  }, [onclose])
+    setTimeout(() => onClose(), 350)
+  }, [onClose])
 
   const goTo = useCallback((i: number) => {
     if (i === index || transitioning) return

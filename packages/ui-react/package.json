@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/ui-react",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Karbon UI components for React / Next.js",
   "type": "module",
   "main": "dist/index.js",
@@ -21,13 +21,15 @@
     "@karbonjs/ui-core": "workspace:*"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/react": "^19.2.14"
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
   }
 }

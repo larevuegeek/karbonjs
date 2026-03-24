@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/auth",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Authentication helpers for Karbon — token management, user cache, hooks",
   "type": "module",
   "main": "dist/index.js",

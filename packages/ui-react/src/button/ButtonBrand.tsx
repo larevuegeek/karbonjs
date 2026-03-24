@@ -3,7 +3,7 @@ import type { BrandProvider, BrandButtonVariant, ButtonSize, ButtonShape } from 
 import type { ReactNode } from 'react'
 import * as si from 'simple-icons'
 
-interface Props {
+export interface ButtonBrandProps {
   brand: BrandProvider
   variant?: BrandButtonVariant
   size?: ButtonSize
@@ -142,7 +142,7 @@ export function ButtonBrand({
   classes = {},
   onClick,
   children,
-}: Props) {
+}: ButtonBrandProps) {
   const [hovered, setHovered] = useState(false)
   const [active, setActive] = useState(false)
 
