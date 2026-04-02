@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/api",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Type-safe API client for Karbon backends with SSR and client support",
   "type": "module",
   "main": "dist/index.js",

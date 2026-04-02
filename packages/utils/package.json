@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/utils",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Utility functions for date, string, number formatting and more",
   "type": "module",
   "main": "dist/index.js",
