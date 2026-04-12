@@ -154,7 +154,7 @@ export function createProxy(config: ProxyConfig) {
     }
 
     // 6. Build headers — forward all original headers except hop-by-hop
-    const skipHeaders = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'x-forwarded-for'])
+    const skipHeaders = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'x-forwarded-for', 'accept-encoding'])
     const headers = new Headers()
     request.headers.forEach((value, key) => {
       if (!skipHeaders.has(key.toLowerCase())) {
@@ -163,16 +163,16 @@ export function createProxy(config: ProxyConfig) {
     })
     headers.set('x-forwarded-for', clientIp)
 
-    // 7. Read body with size check
-    let body: string | null = null
-    if (request.method !== 'GET' && request.method !== 'HEAD' && request.body) {
+    // 7. Read body with size check (binary-safe for multipart uploads)
+    let body: ArrayBuffer | null = null
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
       const contentLength = request.headers.get('content-length')
       if (contentLength && parseInt(contentLength) > maxBodySize) {
         return jsonResponse(413, 'Request too large')
       }
       try {
-        body = await request.text()
-        if (body.length > maxBodySize) {
+        body = await request.arrayBuffer()
+        if (body.byteLength > maxBodySize) {
           return jsonResponse(413, 'Request too large')
         }
       } catch {
@@ -187,7 +187,7 @@ export function createProxy(config: ProxyConfig) {
       apiRes = await fetch(targetUrl, {
         method: request.method,
         headers,
-        body: body ?? undefined,
+        body: body && body.byteLength > 0 ? new Uint8Array(body) : undefined,
       })
     } catch (err) {
       console.error(`[proxy] Backend unreachable: ${request.method} ${targetUrl}`, err)
