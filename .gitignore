@@ -6,3 +6,5 @@ dist/
 .env.local
 *.log
 .claude
+.svelte-kit
+playground/.svelte-kit

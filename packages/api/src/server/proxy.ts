@@ -143,8 +143,11 @@ export function createProxy(config: ProxyConfig) {
       }
       if (host) {
         try {
-          const originHost = new URL(origin).host
-          if (originHost !== host) {
+          // Compare base domain (strip www. and port for reverse proxy compatibility)
+          const normalize = (h: string) => h.replace(/:\d+$/, '').replace(/^www\./, '')
+          const originHost = normalize(new URL(origin).host)
+          const targetHost = normalize(host)
+          if (originHost !== targetHost) {
             return jsonResponse(403, 'CSRF: Origin mismatch')
           }
         } catch {
