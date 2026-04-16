@@ -410,7 +410,25 @@
 
   function cleanHtml(html: string): string {
     const div = document.createElement('div')
-    div.innerHTML = html
+
+    // Full HTML document: extract body content and preserve body style
+    if (preserveStyles && /<(!DOCTYPE|html|body)\b/i.test(html)) {
+      const bodyMatch = html.match(/<body([^>]*)>([\s\S]*?)<\/body>/i)
+      if (bodyMatch) {
+        const bodyAttrs = bodyMatch[1]
+        const bodyContent = bodyMatch[2]
+        const styleMatch = bodyAttrs.match(/style="([^"]*)"/)
+        const bodyStyle = styleMatch ? styleMatch[1] : ''
+        div.innerHTML = bodyStyle
+          ? `<div style="${bodyStyle}">${bodyContent}</div>`
+          : bodyContent
+      } else {
+        div.innerHTML = html
+      }
+    } else {
+      div.innerHTML = html
+    }
+
     div.querySelectorAll('*').forEach(el => {
       el.removeAttribute('class'); el.removeAttribute('id')
       if (!preserveStyles) {
@@ -421,7 +439,7 @@
         }
       }
     })
-    div.querySelectorAll('script, style, meta, link, iframe, object, embed, form, base').forEach(el => el.remove())
+    div.querySelectorAll('script, meta, link').forEach(el => el.remove())
     let str = div.innerHTML
     str = str.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
     return str
@@ -743,7 +761,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div role="toolbar" aria-label="Éditeur de texte riche" class="rte-wrapper {fullscreen ? 'fixed inset-0 z-40 rounded-none flex flex-col' : ''} {className}">
+<div role="toolbar" aria-label="Éditeur de texte riche" class="rte-wrapper {fullscreen ? 'fixed inset-0 z-40 rounded-none flex flex-col' : ''} {preserveStyles ? 'rte-wrapper-preserve' : ''} {className}">
 
   <!-- ═══ TOOLBAR ═══ -->
   <div class="rte-toolbar" style="{toolbarMode === 'floating' ? 'display:none;' : ''}{toolbarMode === 'bottom' ? 'order:2;' : ''}">
@@ -1068,7 +1086,7 @@
     <!-- svelte-ignore a11y_interactive_supports_focus -->
     <div
       bind:this={editor} contenteditable="true"
-      class="rte-content rte-{theme} outline-none {fullscreen ? 'flex-1 overflow-y-auto' : ''}"
+      class="rte-content rte-{theme} outline-none {fullscreen ? 'flex-1 overflow-y-auto' : ''} {preserveStyles ? 'rte-preserve-styles' : ''}"
       style="{fullscreen ? '' : 'min-height: 500px; max-height: 800px; overflow-y: auto;'}"
       data-placeholder={placeholder} role="textbox" aria-multiline="true"
       oninput={handleInput} onkeydown={handleKeydown} onkeyup={updateActiveFormats}
@@ -1500,6 +1518,9 @@
     border: 1px solid var(--karbon-border);
     background: var(--karbon-bg-card);
   }
+  .rte-wrapper-preserve {
+    background: transparent; border: none; box-shadow: none; border-radius: 0;
+  }
 
   /* ═══════════════════════════════════════════════
      TOOLBAR
@@ -1714,6 +1735,14 @@
     padding-bottom: 0.5rem;
     border: 1px solid var(--karbon-border);
   }
+
+  /* preserveStyles: reset all editor defaults so inline styles from HTML templates are respected */
+  .rte-preserve-styles { padding: 0 !important; line-height: normal !important; }
+  .rte-preserve-styles :global(table) { width: auto; border-collapse: collapse; margin: 0; }
+  .rte-preserve-styles :global(td),
+  .rte-preserve-styles :global(th) { padding: 0; border: none; background: none; font-weight: inherit; font-size: inherit; line-height: inherit; }
+  .rte-preserve-styles :global(p) { margin: 0; }
+
   .rte-content :global(.embed-responsive) {
     overflow: hidden;
     border-radius: 0.5rem;
