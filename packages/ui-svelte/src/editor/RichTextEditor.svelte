@@ -23,6 +23,7 @@
     toolbar?: ToolbarConfig
     toolbarMode?: 'fixed' | 'floating' | 'bottom'
     tokens?: EditorToken[]
+    preserveStyles?: boolean
     class?: string
   }
 
@@ -34,6 +35,7 @@
     toolbar = 'standard',
     toolbarMode = 'fixed',
     tokens = [],
+    preserveStyles = false,
     class: className = ''
   }: Props = $props()
 
@@ -411,10 +413,12 @@
     div.innerHTML = html
     div.querySelectorAll('*').forEach(el => {
       el.removeAttribute('class'); el.removeAttribute('id')
-      const style = el.getAttribute('style')
-      if (style) {
-        const parts = style.split(';').filter(s => ['text-align', 'font-weight', 'font-style', 'text-decoration'].some(a => s.trim().startsWith(a)))
-        if (parts.length) el.setAttribute('style', parts.join(';')); else el.removeAttribute('style')
+      if (!preserveStyles) {
+        const style = el.getAttribute('style')
+        if (style) {
+          const parts = style.split(';').filter(s => ['text-align', 'font-weight', 'font-style', 'text-decoration'].some(a => s.trim().startsWith(a)))
+          if (parts.length) el.setAttribute('style', parts.join(';')); else el.removeAttribute('style')
+        }
       }
     })
     div.querySelectorAll('script, style, meta, link, iframe, object, embed, form, base').forEach(el => el.remove())
