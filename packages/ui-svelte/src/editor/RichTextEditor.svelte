@@ -732,13 +732,26 @@
   }
 
   function formatHtml(html: string): string {
+    const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'])
+    const getName = (tag: string) => {
+      const m = tag.match(/^<\/?([a-zA-Z][a-zA-Z0-9]*)/)
+      return m ? m[1].toLowerCase() : ''
+    }
     let result = '', indent = 0
-    const tags = html.replace(/>\s*</g, '>\n<').split('\n')
-    for (const tag of tags) {
-      const trimmed = tag.trim(); if (!trimmed) continue
-      if (trimmed.startsWith('</')) indent = Math.max(0, indent - 1)
+    const lines = html.replace(/>\s*</g, '>\n<').split('\n')
+    for (const raw of lines) {
+      const trimmed = raw.trim()
+      if (!trimmed) continue
+      const tags = trimmed.match(/<\/?[a-zA-Z][^>]*>/g) || []
+      let opens = 0, closes = 0
+      for (const t of tags) {
+        if (t.startsWith('</')) closes++
+        else if (!t.endsWith('/>') && !t.startsWith('<!') && !VOID.has(getName(t))) opens++
+      }
+      const leadingClose = trimmed.startsWith('</') ? 1 : 0
+      indent = Math.max(0, indent - leadingClose)
       result += '  '.repeat(indent) + trimmed + '\n'
-      if (trimmed.startsWith('<') && !trimmed.startsWith('</') && !trimmed.endsWith('/>') && !trimmed.startsWith('<!') && !/^<(br|hr|img|input|meta|link)\b/i.test(trimmed)) indent++
+      indent = Math.max(0, indent + opens - closes + leadingClose)
     }
     return result.trim()
   }
@@ -756,6 +769,42 @@
 
   function handleSourceInput() { value = sourceCode; updateLineNumbers() }
   function handleSourceScroll() { if (lineNumbers && sourceEl) lineNumbers.scrollTop = sourceEl.scrollTop }
+  function handleSourceKeydown(e: KeyboardEvent) {
+    if (e.key !== 'Tab') return
+    e.preventDefault()
+    const ta = sourceEl
+    const start = ta.selectionStart, end = ta.selectionEnd
+    const value0 = ta.value
+    const INDENT = '  '
+    if (start === end && !e.shiftKey) {
+      const next = value0.slice(0, start) + INDENT + value0.slice(end)
+      sourceCode = next
+      tick().then(() => { ta.selectionStart = ta.selectionEnd = start + INDENT.length })
+      handleSourceInput()
+      return
+    }
+    const lineStart = value0.lastIndexOf('\n', start - 1) + 1
+    const lineEnd = end === start ? start : (value0[end - 1] === '\n' ? end - 1 : end)
+    const before = value0.slice(0, lineStart)
+    const block = value0.slice(lineStart, end)
+    const after = value0.slice(end)
+    const lines = block.split('\n')
+    let removed = 0, added = 0
+    const newLines = lines.map((ln, i) => {
+      if (e.shiftKey) {
+        const m = ln.match(/^( {1,2}|\t)/)
+        if (m) { if (i === 0) removed = m[0].length; else removed += m[0].length; return ln.slice(m[0].length) }
+        return ln
+      }
+      if (i === 0) added = INDENT.length; else added += INDENT.length
+      return INDENT + ln
+    })
+    sourceCode = before + newLines.join('\n') + after
+    const newStart = e.shiftKey ? Math.max(lineStart, start - removed) : start + (start === lineStart ? 0 : INDENT.length)
+    const newEnd = e.shiftKey ? end - removed : end + added
+    tick().then(() => { ta.selectionStart = newStart; ta.selectionEnd = newEnd })
+    handleSourceInput()
+  }
   function insertColor(color: string) { exec('foreColor', color); showColorPicker = false }
   function isActive(cmd: string): string { return activeFormats.has(cmd) ? 'rte-btn rte-btn-active' : 'rte-btn' }
 </script>
@@ -1080,7 +1129,7 @@
     <div class="rte-source-wrapper {fullscreen ? 'flex-1' : ''}" style="{fullscreen ? '' : 'height: 500px;'}">
       <div bind:this={lineNumbers} class="rte-line-numbers"></div>
       <div class="rte-highlight-layer" aria-hidden="true">{@html highlightHtml(sourceCode)}</div>
-      <textarea bind:this={sourceEl} bind:value={sourceCode} oninput={handleSourceInput} onscroll={handleSourceScroll} class="rte-source-textarea" spellcheck="false" wrap="off"></textarea>
+      <textarea bind:this={sourceEl} bind:value={sourceCode} oninput={handleSourceInput} onkeydown={handleSourceKeydown} onscroll={handleSourceScroll} class="rte-source-textarea" spellcheck="false" wrap="off"></textarea>
     </div>
   {:else}
     <!-- svelte-ignore a11y_interactive_supports_focus -->

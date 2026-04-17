@@ -1,6 +1,6 @@
 {
   "name": "@karbonjs/types",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "Shared TypeScript types for Karbon API responses",
   "type": "module",
   "main": "dist/index.js",
