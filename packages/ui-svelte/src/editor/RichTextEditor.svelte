@@ -733,26 +733,50 @@
 
   function formatHtml(html: string): string {
     const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'])
-    const getName = (tag: string) => {
-      const m = tag.match(/^<\/?([a-zA-Z][a-zA-Z0-9]*)/)
-      return m ? m[1].toLowerCase() : ''
+    const INLINE = new Set(['a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'code', 'data', 'dfn', 'em', 'font', 'i', 'img', 'ins', 'del', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var', 'wbr'])
+    const wrapper = document.createElement('div')
+    wrapper.innerHTML = html
+    const serializeAttrs = (el: Element) => {
+      let out = ''
+      for (const a of Array.from(el.attributes)) out += ` ${a.name}="${a.value.replace(/"/g, '&quot;')}"`
+      return out
     }
-    let result = '', indent = 0
-    const lines = html.replace(/>\s*</g, '>\n<').split('\n')
-    for (const raw of lines) {
-      const trimmed = raw.trim()
-      if (!trimmed) continue
-      const tags = trimmed.match(/<\/?[a-zA-Z][^>]*>/g) || []
-      let opens = 0, closes = 0
-      for (const t of tags) {
-        if (t.startsWith('</')) closes++
-        else if (!t.endsWith('/>') && !t.startsWith('<!') && !VOID.has(getName(t))) opens++
+    const openTag = (el: Element) => `<${el.tagName.toLowerCase()}${serializeAttrs(el)}>`
+    const closeTag = (el: Element) => `</${el.tagName.toLowerCase()}>`
+    const inlineSerialize = (node: Node): string => {
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent || ''
+      if (node.nodeType !== Node.ELEMENT_NODE) return ''
+      const el = node as Element
+      const tag = el.tagName.toLowerCase()
+      if (VOID.has(tag)) return openTag(el)
+      let inner = ''
+      for (const c of Array.from(el.childNodes)) inner += inlineSerialize(c)
+      return openTag(el) + inner + closeTag(el)
+    }
+    const walk = (node: Node, depth: number): string => {
+      const pad = '  '.repeat(depth)
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = (node.textContent || '').trim()
+        return text ? pad + text + '\n' : ''
       }
-      const leadingClose = trimmed.startsWith('</') ? 1 : 0
-      indent = Math.max(0, indent - leadingClose)
-      result += '  '.repeat(indent) + trimmed + '\n'
-      indent = Math.max(0, indent + opens - closes + leadingClose)
+      if (node.nodeType !== Node.ELEMENT_NODE) return ''
+      const el = node as Element
+      const tag = el.tagName.toLowerCase()
+      if (VOID.has(tag)) return pad + openTag(el) + '\n'
+      const children = Array.from(el.childNodes).filter(c => c.nodeType !== Node.TEXT_NODE || (c.textContent || '').trim())
+      const hasBlockChild = children.some(c => c.nodeType === Node.ELEMENT_NODE && !INLINE.has((c as Element).tagName.toLowerCase()))
+      if (!hasBlockChild) {
+        let inner = ''
+        for (const c of Array.from(el.childNodes)) inner += inlineSerialize(c)
+        return pad + openTag(el) + inner.trim() + closeTag(el) + '\n'
+      }
+      let out = pad + openTag(el) + '\n'
+      for (const c of Array.from(el.childNodes)) out += walk(c, depth + 1)
+      out += pad + closeTag(el) + '\n'
+      return out
     }
+    let result = ''
+    for (const c of Array.from(wrapper.childNodes)) result += walk(c, 0)
     return result.trim()
   }
 
@@ -1399,10 +1423,10 @@
         </div>
         <!-- View toggle -->
         <div class="rte-media-view-toggle">
-          <button type="button" onclick={() => mediaViewMode = 'grid'} class="p-1.5 {mediaViewMode === 'grid' ? 'bg-violet-500/15 text-violet-400' : 'opacity-40 hover:opacity-70'}">
+          <button type="button" onclick={() => mediaViewMode = 'grid'} aria-label="Vue grille" class="p-1.5 {mediaViewMode === 'grid' ? 'bg-violet-500/15 text-violet-400' : 'opacity-40 hover:opacity-70'}">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
           </button>
-          <button type="button" onclick={() => mediaViewMode = 'list'} class="p-1.5 {mediaViewMode === 'list' ? 'bg-violet-500/15 text-violet-400' : 'opacity-40 hover:opacity-70'}">
+          <button type="button" onclick={() => mediaViewMode = 'list'} aria-label="Vue liste" class="p-1.5 {mediaViewMode === 'list' ? 'bg-violet-500/15 text-violet-400' : 'opacity-40 hover:opacity-70'}">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
           </button>
         </div>
@@ -1452,10 +1476,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-violet-400"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
           <input type="text" bind:value={mediaNewFolderName} placeholder="Nom du dossier..." class="rte-input flex-1 !py-1.5 !text-xs"
             onkeydown={(e) => { if (e.key === 'Enter') mediaCreateFolder(); if (e.key === 'Escape') mediaShowNewFolder = false }} />
-          <button type="button" onclick={mediaCreateFolder} class="rte-btn-primary !py-1.5 !px-3">
+          <button type="button" onclick={mediaCreateFolder} aria-label="Créer le dossier" class="rte-btn-primary !py-1.5 !px-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
           </button>
-          <button type="button" onclick={() => mediaShowNewFolder = false} class="rte-modal-close">
+          <button type="button" onclick={() => mediaShowNewFolder = false} aria-label="Annuler" class="rte-modal-close">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>

@@ -57,7 +57,7 @@
 
   let current = $state(0)
   let timer: ReturnType<typeof setInterval> | null = null
-  let trackEl: HTMLElement
+  let trackEl = $state<HTMLElement>()
   let dragStartX = 0
   let dragDelta = $state(0)
   let isDragging = $state(false)
@@ -146,6 +146,7 @@
 
 <svelte:window onmouseup={handleDragEnd} onmousemove={handleDragMove} ontouchend={handleDragEnd} />
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
 <div
   role="region"
   aria-label="Carousel"
@@ -178,8 +179,11 @@
     </div>
   {:else}
     <!-- Slide mode -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       bind:this={trackEl}
+      role="group"
+      aria-label="Slides"
       class="flex {classes?.track ?? ''}"
       style="transform:translateX(calc({trackOffset}% + {dragDelta}px));transition:{isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.16,1,0.3,1)'};gap:{gap}px;{peek ? `padding:0 ${peek}px;` : ''}"
       onmousedown={handleDragStart}

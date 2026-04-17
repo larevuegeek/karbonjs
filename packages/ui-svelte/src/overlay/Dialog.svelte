@@ -164,10 +164,11 @@
       <!-- Confirm input -->
       {#if confirmInput}
         <div class="mt-5 text-left">
-          <label class="block text-xs font-medium mb-1.5" style="color:var(--karbon-text-2);">
+          <label for="karbon-dialog-confirm-input" class="block text-xs font-medium mb-1.5" style="color:var(--karbon-text-2);">
             {confirmInputLabelText}
           </label>
           <input
+            id="karbon-dialog-confirm-input"
             type="text"
             bind:value={inputValue}
             placeholder={confirmInputPlaceholder ?? confirmInput}

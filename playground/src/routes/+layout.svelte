@@ -103,6 +103,7 @@
     ]},
     { group: 'Editeur', items: [
       { label: 'RichTextEditor', href: '/editor', icon: icons.edit },
+      { label: 'Source indent', href: '/editor-source-test', icon: icons.edit },
       { label: 'CodeBlock', href: '/codeblock', icon: icons.kbd },
     ]},
     { group: 'Divers', items: [

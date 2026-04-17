@@ -35,6 +35,7 @@
     classes = {}
   }: Props = $props()
 
+  // svelte-ignore state_referenced_locally
   let position = $state(initialPosition)
   let dragging = $state(false)
   let containerEl: HTMLDivElement

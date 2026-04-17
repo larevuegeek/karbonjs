@@ -77,6 +77,7 @@
   let sortKey = $state('')
   let sortDir = $state<'asc' | 'desc' | null>(null)
   let currentPage = $state(1)
+  // svelte-ignore state_referenced_locally
   let itemsPerPage = $state(perPage || 20)
   let selected = $state<Set<number>>(new Set())
   let activeFilters = $state<Record<string, string>>({})

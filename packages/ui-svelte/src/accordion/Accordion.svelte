@@ -53,6 +53,7 @@
   const accent = $derived(color ? `var(--karbon-${color}-500)` : 'var(--karbon-primary)')
   const accentBg = $derived(color ? `var(--karbon-${color}-500)` : 'var(--karbon-primary)')
 
+  // svelte-ignore state_referenced_locally
   let openIds = $state<Set<string>>(new Set(items.filter(i => i.defaultOpen).map(i => i.id)))
 
   function toggle(id: string) {

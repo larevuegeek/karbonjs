@@ -35,7 +35,7 @@
     classes = {}
   }: Props = $props()
 
-  let container: HTMLElement
+  let container = $state<HTMLDivElement>()
   let zooming = $state(false)
   let posX = $state(50)
   let posY = $state(50)
@@ -80,6 +80,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
 <div
   bind:this={container}
   class="karbon-imgzoom relative overflow-hidden inline-block {classes?.root ?? className}"
