@@ -20,6 +20,7 @@ export interface MediaProvider {
   upload?: (file: File, path?: string) => Promise<{ url: string; name: string }>
   delete?: (id: number | string) => Promise<void>
   createFolder?: (path: string) => Promise<void>
+  move?: (source: string, dest: string) => Promise<void>
 }
 
 export type EditorTheme = 'default' | 'prose' | 'compact' | 'minimal'

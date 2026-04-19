@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import type { MediaProvider } from '@karbonjs/ui-core'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import type { MediaProvider, MediaFile } from '@karbonjs/ui-core'
 
 export interface RichTextEditorProps {
   value?: string
@@ -74,6 +74,19 @@ function isActiveClass(active: boolean): string {
   return active ? 'bg-violet-500/15 text-violet-400' : 'text-[var(--karbon-text-3)] hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]'
 }
 
+function isMediaImage(entry: MediaFile): boolean {
+  return entry.mime?.startsWith('image/') ?? false
+}
+
+function formatSize(bytes: number): string {
+  if (bytes === 0) return '—'
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / 1048576).toFixed(1)} Mo`
+}
+
+const INTERNAL_DRAG_MIME = 'application/x-karbon-media'
+
 // SVG icons as inline strings
 const icons = {
   undo: <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>,
@@ -105,6 +118,22 @@ const icons = {
   upload: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
   folder: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>,
   spinner: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
+  spinnerSm: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
+  arrowLeft: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
+  home: <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  refresh: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>,
+  folderAdd: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>,
+  folderSolid: <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>,
+  folderSm: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>,
+  fileGeneric: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>,
+  fileGenericSm: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>,
+  trash: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+  alertTriangle: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>,
+  gridIcon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
+  listIcon: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>,
+  chevronRight: <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+  check: <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>,
+  folderOpen: <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-3 opacity-30"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>,
 }
 
 const editorContentClass = `outline-none px-5 py-5 text-[var(--karbon-text)] text-[0.9375rem] leading-relaxed
@@ -168,6 +197,33 @@ export function RichTextEditor({
   const [embedUrl, setEmbedUrl] = useState('')
   const [findText, setFindText] = useState('')
   const [replaceText, setReplaceText] = useState('')
+
+  // Media explorer state
+  const [showMediaExplorer, setShowMediaExplorer] = useState(false)
+  const [mediaExplorerContext, setMediaExplorerContext] = useState<'editor' | 'imageModal'>('editor')
+  const [mediaCurrentPath, setMediaCurrentPath] = useState('')
+  const [mediaEntries, setMediaEntries] = useState<MediaFile[]>([])
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const [mediaUploading, setMediaUploading] = useState(false)
+  const [mediaSearch, setMediaSearch] = useState('')
+  const [mediaSelected, setMediaSelected] = useState<MediaFile | null>(null)
+  const [mediaViewMode, setMediaViewMode] = useState<'grid' | 'list'>('grid')
+  const [mediaShowNewFolder, setMediaShowNewFolder] = useState(false)
+  const [mediaNewFolderName, setMediaNewFolderName] = useState('')
+  const [mediaDragOver, setMediaDragOver] = useState(false)
+  const [mediaConfirmDelete, setMediaConfirmDelete] = useState<MediaFile | null>(null)
+  const [mediaDeleting, setMediaDeleting] = useState(false)
+  const [mediaDragging, setMediaDragging] = useState<MediaFile | null>(null)
+  const [mediaDropTarget, setMediaDropTarget] = useState<string | null>(null)
+
+  const mediaBreadcrumbs = useMemo(() => {
+    const parts = mediaCurrentPath.split('/').filter(Boolean)
+    return parts.map((part, i) => ({ label: part, path: parts.slice(0, i + 1).join('/') }))
+  }, [mediaCurrentPath])
+
+  const mediaFiltered = useMemo(() =>
+    mediaSearch ? mediaEntries.filter(e => e.name.toLowerCase().includes(mediaSearch.toLowerCase())) : mediaEntries
+  , [mediaEntries, mediaSearch])
 
   useEffect(() => {
     if (editorRef.current && value && !editorRef.current.innerHTML) {
@@ -270,10 +326,181 @@ export function RichTextEditor({
     if (!files?.length || !media?.upload) return
     setImageUploading(true)
     try {
-      const result = await media.upload(files[0])
+      const result = await media.upload(files[0], mediaCurrentPath)
       setImageUrl(result.url)
       setImageAlt(files[0].name.replace(/\.[^/.]+$/, ''))
     } catch { /* */ } finally { setImageUploading(false) }
+  }
+
+  // ── Media explorer ──
+  const browseMedia = useCallback(async (path: string) => {
+    if (!media?.browse) return
+    setMediaLoading(true)
+    setMediaSelected(null)
+    setMediaConfirmDelete(null)
+    setMediaDragging(null)
+    setMediaDropTarget(null)
+    try {
+      const result = await media.browse(path, mediaSearch || undefined)
+      setMediaCurrentPath(result.path ?? path)
+      setMediaEntries(result.entries ?? [])
+    } catch { setMediaEntries([]) } finally { setMediaLoading(false) }
+  }, [media, mediaSearch])
+
+  function openMediaExplorerForImage() {
+    setMediaExplorerContext('imageModal')
+    setShowImageModal(false)
+    setShowMediaExplorer(true)
+    browseMedia(mediaCurrentPath)
+  }
+
+  function openMediaExplorerInline() {
+    saveSelection()
+    setMediaExplorerContext('editor')
+    setShowMediaExplorer(true)
+    browseMedia(mediaCurrentPath)
+  }
+
+  function mediaNavigateTo(path: string) { setMediaCurrentPath(path); browseMedia(path) }
+  function mediaGoUp() {
+    const parts = mediaCurrentPath.split('/').filter(Boolean)
+    parts.pop()
+    mediaNavigateTo(parts.join('/'))
+  }
+
+  function handleMediaEntryClick(entry: MediaFile) {
+    if (entry.is_dir) mediaNavigateTo(entry.path)
+    else setMediaSelected(s => s?.path === entry.path ? null : entry)
+  }
+
+  function handleMediaEntryDblClick(entry: MediaFile) {
+    if (!entry.is_dir && entry.url) handleMediaSelect(entry.url)
+  }
+
+  function handleMediaSelect(url: string) {
+    setShowMediaExplorer(false)
+    if (mediaExplorerContext === 'imageModal') {
+      setImageUrl(url)
+      setImageAlt(url.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? '')
+      setShowImageModal(true)
+    } else {
+      restoreSelection()
+      editorRef.current?.focus()
+      document.execCommand('insertHTML', false, `<img src="${escAttr(url)}" loading="lazy" />`)
+      if (editorRef.current) onChange?.(editorRef.current.innerHTML)
+    }
+  }
+
+  async function mediaHandleUpload(files: FileList | null) {
+    if (!files?.length || !media?.upload) return
+    setMediaUploading(true)
+    try {
+      for (const file of Array.from(files)) await media.upload(file, mediaCurrentPath)
+      await browseMedia(mediaCurrentPath)
+    } catch { } finally { setMediaUploading(false); setMediaDragOver(false) }
+  }
+
+  function isInternalDrag(e: React.DragEvent): boolean {
+    return e.dataTransfer.types.includes(INTERNAL_DRAG_MIME)
+  }
+
+  function mediaHandleDrop(e: React.DragEvent) {
+    if (isInternalDrag(e)) { setMediaDragOver(false); return }
+    e.preventDefault(); setMediaDragOver(false)
+    mediaHandleUpload(e.dataTransfer.files)
+  }
+
+  async function mediaCreateFolder() {
+    if (!mediaNewFolderName.trim() || !media?.createFolder) return
+    try {
+      const path = mediaCurrentPath ? `${mediaCurrentPath}/${mediaNewFolderName}` : mediaNewFolderName
+      await media.createFolder(path)
+      setMediaShowNewFolder(false); setMediaNewFolderName('')
+      await browseMedia(mediaCurrentPath)
+    } catch { }
+  }
+
+  async function mediaHandleDelete() {
+    if (!mediaConfirmDelete || !media?.delete || mediaConfirmDelete.id == null) return
+    setMediaDeleting(true)
+    const target = mediaConfirmDelete
+    try {
+      await media.delete(target.id!)
+      if (mediaSelected?.path === target.path) setMediaSelected(null)
+      setMediaConfirmDelete(null)
+      await browseMedia(mediaCurrentPath)
+    } catch { } finally { setMediaDeleting(false) }
+  }
+
+  function mediaCanDropOn(entry: MediaFile): boolean {
+    if (!mediaDragging || !entry.is_dir) return false
+    if (mediaDragging.path === entry.path) return false
+    if (mediaDragging.is_dir && entry.path.startsWith(mediaDragging.path + '/')) return false
+    const sourceParent = mediaDragging.path.split('/').slice(0, -1).join('/')
+    if (sourceParent === entry.path) return false
+    return true
+  }
+
+  function mediaEntryDragStart(e: React.DragEvent, entry: MediaFile) {
+    if (!media?.move) { e.preventDefault(); return }
+    setMediaDragging(entry)
+    e.dataTransfer.setData(INTERNAL_DRAG_MIME, entry.path)
+    e.dataTransfer.setData('text/plain', entry.path)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function mediaEntryDragEnd() {
+    setMediaDragging(null); setMediaDropTarget(null)
+  }
+
+  function mediaEntryDragOver(e: React.DragEvent, entry: MediaFile) {
+    if (!isInternalDrag(e) || !mediaCanDropOn(entry)) return
+    e.preventDefault(); e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    setMediaDropTarget(entry.path)
+  }
+
+  function mediaEntryDragLeave(entry: MediaFile) {
+    setMediaDropTarget(t => t === entry.path ? null : t)
+  }
+
+  async function mediaEntryDrop(e: React.DragEvent, entry: MediaFile) {
+    if (!isInternalDrag(e) || !mediaCanDropOn(entry) || !mediaDragging) return
+    e.preventDefault(); e.stopPropagation()
+    const source = mediaDragging.path
+    const dest = entry.path ? `${entry.path}/${mediaDragging.name}` : mediaDragging.name
+    setMediaDragging(null); setMediaDropTarget(null)
+    await mediaMoveFile(source, dest)
+  }
+
+  function mediaUpDragOver(e: React.DragEvent) {
+    if (!isInternalDrag(e) || !mediaDragging || !mediaCurrentPath) return
+    e.preventDefault(); e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    setMediaDropTarget('__up__')
+  }
+
+  function mediaUpDragLeave() {
+    setMediaDropTarget(t => t === '__up__' ? null : t)
+  }
+
+  async function mediaUpDrop(e: React.DragEvent) {
+    if (!isInternalDrag(e) || !mediaDragging || !mediaCurrentPath) return
+    e.preventDefault(); e.stopPropagation()
+    const source = mediaDragging.path
+    const parentPath = mediaCurrentPath.split('/').slice(0, -1).join('/')
+    const dest = parentPath ? `${parentPath}/${mediaDragging.name}` : mediaDragging.name
+    setMediaDragging(null); setMediaDropTarget(null)
+    await mediaMoveFile(source, dest)
+  }
+
+  async function mediaMoveFile(source: string, dest: string) {
+    if (!media?.move || source === dest) return
+    try {
+      await media.move(source, dest)
+      if (mediaSelected?.path === source) setMediaSelected(null)
+      await browseMedia(mediaCurrentPath)
+    } catch { }
   }
 
   function insertImage() {
@@ -449,6 +676,7 @@ export function RichTextEditor({
 
           <TBtn onClick={openLinkModal} title="Lien (Ctrl+K)" label="Insérer un lien">{icons.link}</TBtn>
           <TBtn onClick={openImageModal} title="Image" label="Insérer une image">{icons.image}</TBtn>
+          {media && <TBtn onClick={openMediaExplorerInline} title="Médias" label="Explorer les médias">{icons.folder}</TBtn>}
           <TBtn onClick={() => { saveSelection(); setShowTableModal(true); setTableRows(3); setTableCols(3) }} title="Tableau" label="Insérer un tableau">{icons.table}</TBtn>
           <TBtn onClick={() => { saveSelection(); setEmbedUrl(''); setShowEmbedModal(true) }} title="Vidéo / Embed" label="Insérer une vidéo">{icons.video}</TBtn>
 
@@ -545,12 +773,19 @@ export function RichTextEditor({
               <button type="button" onClick={() => setShowImageModal(false)} className="text-[var(--karbon-text-4)] hover:text-[var(--karbon-text)] cursor-pointer" aria-label="Fermer">{icons.x}</button>
             </div>
             <div className="space-y-4">
-              {media?.upload && (
-                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--karbon-border)] p-4">
+              {media && (
+                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[var(--karbon-border)] p-4 gap-2">
                   {imageUploading ? (
                     <>{icons.spinner}<p className="text-[11px] text-[var(--karbon-text-3)] mt-1">Upload...</p></>
                   ) : (
-                    <>{icons.upload}<label className="cursor-pointer text-xs font-medium text-violet-400 hover:text-violet-300 mt-1">Uploader<input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e.target.files)} /></label></>
+                    <>
+                      {icons.upload}
+                      <div className="flex items-center gap-3">
+                        {media.upload && <label className="cursor-pointer text-xs font-medium text-violet-400 hover:text-violet-300">Uploader<input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e.target.files)} /></label>}
+                        {media.upload && <span className="text-[var(--karbon-text-4)] text-xs">·</span>}
+                        <button type="button" onClick={openMediaExplorerForImage} className="text-xs font-medium text-violet-400 hover:text-violet-300 cursor-pointer">Parcourir les médias</button>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -606,6 +841,193 @@ export function RichTextEditor({
 
       {/* COLOR PICKER BACKDROP */}
       {showColorPicker && <div className="fixed inset-0 z-10" role="presentation" onClick={() => setShowColorPicker(false)} />}
+
+      {/* MEDIA EXPLORER */}
+      {showMediaExplorer && media && (
+        <div className={modalOverlay} role="presentation" onClick={() => setShowMediaExplorer(false)}>
+          <div
+            role="dialog"
+            tabIndex={-1}
+            className="w-[90vw] max-w-5xl h-[80vh] flex flex-col rounded-xl border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+            onDragOver={e => { if (isInternalDrag(e)) return; e.preventDefault(); setMediaDragOver(true) }}
+            onDragLeave={() => setMediaDragOver(false)}
+            onDrop={mediaHandleDrop}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-2 border-b border-[var(--karbon-border)] px-4 py-3">
+              {icons.image}
+              <h2 className="text-sm font-semibold text-[var(--karbon-text)]">Explorateur de médias</h2>
+              <div className="flex-1" />
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40">{icons.search}</span>
+                <input type="text" value={mediaSearch} onChange={e => setMediaSearch(e.target.value)} placeholder="Filtrer..." className={`${modalInput} w-48 !py-1.5 !pl-8 !text-xs`} onKeyDown={e => { if (e.key === 'Enter') browseMedia(mediaCurrentPath) }} />
+              </div>
+              <div className="flex rounded-md border border-[var(--karbon-border)] overflow-hidden">
+                <button type="button" onClick={() => setMediaViewMode('grid')} aria-label="Vue grille" className={`p-1.5 ${mediaViewMode === 'grid' ? 'bg-violet-500/15 text-violet-400' : 'opacity-40 hover:opacity-70'}`}>{icons.gridIcon}</button>
+                <button type="button" onClick={() => setMediaViewMode('list')} aria-label="Vue liste" className={`p-1.5 ${mediaViewMode === 'list' ? 'bg-violet-500/15 text-violet-400' : 'opacity-40 hover:opacity-70'}`}>{icons.listIcon}</button>
+              </div>
+              <button type="button" onClick={() => setShowMediaExplorer(false)} className="text-[var(--karbon-text-4)] hover:text-[var(--karbon-text)] cursor-pointer" aria-label="Fermer">{icons.x}</button>
+            </div>
+
+            {/* Toolbar */}
+            <div className="flex items-center gap-2 border-b border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/30 px-4 py-2">
+              <button type="button" onClick={mediaGoUp} disabled={!mediaCurrentPath}
+                className={`${btnClass} disabled:opacity-30 text-[var(--karbon-text-3)] hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)] ${mediaDropTarget === '__up__' ? 'ring-2 ring-violet-500/70 bg-violet-500/10' : ''}`}
+                aria-label="Remonter"
+                onDragOver={mediaUpDragOver}
+                onDragLeave={mediaUpDragLeave}
+                onDrop={mediaUpDrop}
+              >{icons.arrowLeft}</button>
+              <button type="button" onClick={() => mediaNavigateTo('')} className={`${btnClass} text-[var(--karbon-text-3)] hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]`} aria-label="Racine">{icons.home}</button>
+              <button type="button" onClick={() => browseMedia(mediaCurrentPath)} className={`${btnClass} text-[var(--karbon-text-3)] hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]`} aria-label="Rafraîchir">{icons.refresh}</button>
+              <div className="flex items-center gap-1 text-xs text-[var(--karbon-text-3)]">
+                <button type="button" onClick={() => mediaNavigateTo('')} className="hover:text-violet-400 transition-colors">uploads</button>
+                {mediaBreadcrumbs.map(crumb => (
+                  <span key={crumb.path} className="flex items-center gap-1">
+                    {icons.chevronRight}
+                    <button type="button" onClick={() => mediaNavigateTo(crumb.path)} className="hover:text-violet-400 transition-colors">{crumb.label}</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex-1" />
+              {media.createFolder && (
+                <button type="button" onClick={() => { setMediaShowNewFolder(true); setMediaNewFolderName('') }} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--karbon-border)] bg-[var(--karbon-bg-2)] px-2.5 py-1 text-[11px] text-[var(--karbon-text-3)] hover:text-[var(--karbon-text)] cursor-pointer">
+                  {icons.folderAdd}Nouveau dossier
+                </button>
+              )}
+              {media.upload && (
+                <label className="inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-violet-700 cursor-pointer">
+                  {icons.upload}Uploader
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={e => mediaHandleUpload(e.target.files)} />
+                </label>
+              )}
+            </div>
+
+            {/* New folder */}
+            {mediaShowNewFolder && (
+              <div className="flex items-center gap-2 border-b border-[var(--karbon-border)] bg-violet-500/5 px-4 py-2">
+                <span className="text-violet-400">{icons.folderAdd}</span>
+                <input type="text" value={mediaNewFolderName} onChange={e => setMediaNewFolderName(e.target.value)} placeholder="Nom du dossier..." className={`${modalInput} flex-1 !py-1.5 !text-xs`} autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter') mediaCreateFolder(); if (e.key === 'Escape') setMediaShowNewFolder(false) }} />
+                <button type="button" onClick={mediaCreateFolder} aria-label="Créer le dossier" className={`${modalBtnPrimary} !py-1.5 !px-3`}>{icons.check}</button>
+                <button type="button" onClick={() => setMediaShowNewFolder(false)} aria-label="Annuler" className="text-[var(--karbon-text-4)] hover:text-[var(--karbon-text)] cursor-pointer">{icons.xSm}</button>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className={`relative flex-1 overflow-auto p-4 ${mediaDragOver ? 'ring-2 ring-inset ring-violet-500/50 bg-violet-500/5' : ''}`}>
+              {mediaUploading && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--karbon-bg-card)]/80 backdrop-blur-sm">
+                  {icons.spinner}
+                  <p className="text-sm opacity-60 mt-2">Upload en cours...</p>
+                </div>
+              )}
+
+              {mediaLoading ? (
+                <div className="flex items-center justify-center py-20 text-violet-400">{icons.spinner}</div>
+              ) : mediaFiltered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 opacity-40 text-[var(--karbon-text)]">
+                  {icons.folderOpen}
+                  <p className="text-sm">Dossier vide</p>
+                  <p className="mt-1 text-xs">Glissez des fichiers ici ou cliquez sur Uploader</p>
+                </div>
+              ) : mediaViewMode === 'grid' ? (
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                  {mediaFiltered.map(entry => (
+                    <div key={entry.path}
+                      className={`flex flex-col items-center p-2 rounded-lg cursor-pointer transition-all border border-transparent hover:border-[var(--karbon-border)] ${mediaSelected?.path === entry.path ? 'bg-violet-500/10 border-violet-500/40' : ''} ${mediaDropTarget === entry.path ? 'ring-2 ring-violet-500/70 bg-violet-500/10' : ''} ${mediaDragging?.path === entry.path ? 'opacity-40' : ''}`}
+                      draggable={!!media.move}
+                      onClick={() => handleMediaEntryClick(entry)}
+                      onDoubleClick={() => handleMediaEntryDblClick(entry)}
+                      onDragStart={e => mediaEntryDragStart(e, entry)}
+                      onDragEnd={mediaEntryDragEnd}
+                      onDragOver={e => mediaEntryDragOver(e, entry)}
+                      onDragLeave={() => mediaEntryDragLeave(entry)}
+                      onDrop={e => mediaEntryDrop(e, entry)}
+                    >
+                      {entry.is_dir ? (
+                        <div className="flex h-16 w-16 items-center justify-center text-amber-400/80">{icons.folderSolid}</div>
+                      ) : isMediaImage(entry) && entry.url ? (
+                        <div className="h-16 w-16 rounded overflow-hidden border border-[var(--karbon-border)]"><img src={entry.url} alt={entry.name} className="h-full w-full object-cover" loading="lazy" /></div>
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center opacity-40 text-[var(--karbon-text)]">{icons.fileGeneric}</div>
+                      )}
+                      <p className="mt-1.5 w-full truncate text-center text-[11px] text-[var(--karbon-text)]">{entry.name}</p>
+                      <p className="text-[10px] opacity-40 text-[var(--karbon-text)]">{entry.is_dir ? 'Dossier' : formatSize(entry.size)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col rounded-lg border border-[var(--karbon-border)] overflow-hidden">
+                  {mediaFiltered.map((entry, i) => (
+                    <div key={entry.path}
+                      className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${i > 0 ? 'border-t border-[var(--karbon-border)]' : ''} ${mediaSelected?.path === entry.path ? 'bg-violet-500/10' : 'hover:bg-[var(--karbon-bg-2)]'} ${mediaDropTarget === entry.path ? 'ring-2 ring-inset ring-violet-500/70 bg-violet-500/10' : ''} ${mediaDragging?.path === entry.path ? 'opacity-40' : ''}`}
+                      draggable={!!media.move}
+                      onClick={() => handleMediaEntryClick(entry)}
+                      onDoubleClick={() => handleMediaEntryDblClick(entry)}
+                      onDragStart={e => mediaEntryDragStart(e, entry)}
+                      onDragEnd={mediaEntryDragEnd}
+                      onDragOver={e => mediaEntryDragOver(e, entry)}
+                      onDragLeave={() => mediaEntryDragLeave(entry)}
+                      onDrop={e => mediaEntryDrop(e, entry)}
+                    >
+                      {entry.is_dir ? (
+                        <span className="shrink-0 text-amber-400/80">{icons.folderSm}</span>
+                      ) : isMediaImage(entry) && entry.url ? (
+                        <img src={entry.url} alt="" className="h-8 w-8 rounded object-cover shrink-0" loading="lazy" />
+                      ) : (
+                        <span className="shrink-0 opacity-40 text-[var(--karbon-text)]">{icons.fileGenericSm}</span>
+                      )}
+                      <span className="flex-1 truncate text-xs text-[var(--karbon-text)]">{entry.name}</span>
+                      <span className="text-[11px] opacity-40 text-[var(--karbon-text)]">{entry.is_dir ? 'Dossier' : formatSize(entry.size)}</span>
+                      {entry.modified && <span className="hidden sm:block text-[11px] opacity-40 text-[var(--karbon-text)]">{entry.modified}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-2 border-t border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/30 px-4 py-3">
+              {mediaConfirmDelete ? (
+                <>
+                  <span className="shrink-0 text-red-400">{icons.alertTriangle}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-xs font-medium text-[var(--karbon-text)]">Supprimer "{mediaConfirmDelete.name}" ?</p>
+                    <p className="text-[11px] opacity-60 text-[var(--karbon-text)]">{mediaConfirmDelete.is_dir ? 'Le dossier et son contenu seront supprimés.' : 'Cette action est irréversible.'}</p>
+                  </div>
+                  <button type="button" onClick={() => setMediaConfirmDelete(null)} disabled={mediaDeleting} className={modalBtnCancel}>Annuler</button>
+                  <button type="button" onClick={mediaHandleDelete} disabled={mediaDeleting} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-40 cursor-pointer">
+                    {mediaDeleting ? 'Suppression...' : 'Supprimer'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {mediaSelected ? (
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {isMediaImage(mediaSelected) && mediaSelected.url && <img src={mediaSelected.url} alt="" className="h-10 w-10 rounded object-cover" />}
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-medium text-[var(--karbon-text)]">{mediaSelected.name}</p>
+                        <p className="text-[11px] opacity-40 text-[var(--karbon-text)]">{formatSize(mediaSelected.size)} · {mediaSelected.mime ?? 'Inconnu'}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="flex-1 text-xs opacity-40 text-[var(--karbon-text)]">{mediaFiltered.length} élément{mediaFiltered.length !== 1 ? 's' : ''}</p>
+                  )}
+                  {mediaSelected && media.delete && mediaSelected.id != null && (
+                    <button type="button" onClick={() => setMediaConfirmDelete(mediaSelected)} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--karbon-border)] px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 cursor-pointer" aria-label="Supprimer">
+                      {icons.trash}Supprimer
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setShowMediaExplorer(false)} className={modalBtnCancel}>Annuler</button>
+                  <button type="button" onClick={() => { if (mediaSelected?.url) handleMediaSelect(mediaSelected.url) }} disabled={!mediaSelected?.url} className={modalBtnPrimary}>Sélectionner</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

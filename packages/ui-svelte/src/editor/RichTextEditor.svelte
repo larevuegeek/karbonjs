@@ -331,6 +331,11 @@
   let mediaShowNewFolder = $state(false)
   let mediaNewFolderName = $state('')
   let mediaDragOver = $state(false)
+  let mediaConfirmDelete = $state<MediaFile | null>(null)
+  let mediaDeleting = $state(false)
+  let mediaDragging = $state<MediaFile | null>(null)
+  let mediaDropTarget = $state<string | null>(null)
+  const INTERNAL_DRAG_MIME = 'application/x-karbon-media'
 
   const mediaBreadcrumbs = $derived.by(() => {
     const parts = mediaCurrentPath.split('/').filter(Boolean)
@@ -383,6 +388,7 @@
 
   // ── Core editor functions ──
   function handleInput() { value = editor.innerHTML; updateCounts() }
+  function syncValue() { if (editor) { value = editor.innerHTML; updateCounts() } }
 
   function updateCounts() {
     const text = editor?.innerText ?? ''
@@ -571,6 +577,9 @@
     if (!media?.browse) return
     mediaLoading = true
     mediaSelected = null
+    mediaConfirmDelete = null
+    mediaDragging = null
+    mediaDropTarget = null
     try {
       const result = await media.browse(path, mediaSearch || undefined)
       mediaCurrentPath = result.path ?? path
@@ -611,7 +620,10 @@
     } catch { } finally { mediaUploading = false; mediaDragOver = false }
   }
 
-  function mediaHandleDrop(e: DragEvent) { e.preventDefault(); mediaDragOver = false; mediaHandleUpload(e.dataTransfer?.files ?? null) }
+  function mediaHandleDrop(e: DragEvent) {
+    if (isInternalDrag(e)) { mediaDragOver = false; return }
+    e.preventDefault(); mediaDragOver = false; mediaHandleUpload(e.dataTransfer?.files ?? null)
+  }
 
   async function mediaCreateFolder() {
     if (!mediaNewFolderName.trim() || !media?.createFolder) return
@@ -619,6 +631,94 @@
       const path = mediaCurrentPath ? `${mediaCurrentPath}/${mediaNewFolderName}` : mediaNewFolderName
       await media.createFolder(path)
       mediaShowNewFolder = false; mediaNewFolderName = ''
+      await browseMedia(mediaCurrentPath)
+    } catch { }
+  }
+
+  async function mediaHandleDelete() {
+    if (!mediaConfirmDelete || !media?.delete || mediaConfirmDelete.id == null) return
+    mediaDeleting = true
+    const target = mediaConfirmDelete
+    try {
+      await media.delete(target.id!)
+      if (mediaSelected?.path === target.path) mediaSelected = null
+      mediaConfirmDelete = null
+      await browseMedia(mediaCurrentPath)
+    } catch { } finally { mediaDeleting = false }
+  }
+
+  function isInternalDrag(e: DragEvent): boolean {
+    return !!e.dataTransfer?.types.includes(INTERNAL_DRAG_MIME)
+  }
+
+  function mediaCanDropOn(entry: MediaFile): boolean {
+    if (!mediaDragging || !entry.is_dir) return false
+    if (mediaDragging.path === entry.path) return false
+    if (mediaDragging.is_dir && entry.path.startsWith(mediaDragging.path + '/')) return false
+    const sourceParent = mediaDragging.path.split('/').slice(0, -1).join('/')
+    if (sourceParent === entry.path) return false
+    return true
+  }
+
+  function mediaEntryDragStart(e: DragEvent, entry: MediaFile) {
+    if (!media?.move) { e.preventDefault(); return }
+    mediaDragging = entry
+    e.dataTransfer?.setData(INTERNAL_DRAG_MIME, entry.path)
+    e.dataTransfer?.setData('text/plain', entry.path)
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function mediaEntryDragEnd() {
+    mediaDragging = null
+    mediaDropTarget = null
+  }
+
+  function mediaEntryDragOver(e: DragEvent, entry: MediaFile) {
+    if (!isInternalDrag(e) || !mediaCanDropOn(entry)) return
+    e.preventDefault(); e.stopPropagation()
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+    mediaDropTarget = entry.path
+  }
+
+  function mediaEntryDragLeave(entry: MediaFile) {
+    if (mediaDropTarget === entry.path) mediaDropTarget = null
+  }
+
+  async function mediaEntryDrop(e: DragEvent, entry: MediaFile) {
+    if (!isInternalDrag(e) || !mediaCanDropOn(entry) || !mediaDragging) return
+    e.preventDefault(); e.stopPropagation()
+    const source = mediaDragging.path
+    const dest = entry.path ? `${entry.path}/${mediaDragging.name}` : mediaDragging.name
+    mediaDragging = null; mediaDropTarget = null
+    await mediaMoveFile(source, dest)
+  }
+
+  function mediaUpDragOver(e: DragEvent) {
+    if (!isInternalDrag(e) || !mediaDragging || !mediaCurrentPath) return
+    e.preventDefault(); e.stopPropagation()
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+    mediaDropTarget = '__up__'
+  }
+
+  function mediaUpDragLeave() {
+    if (mediaDropTarget === '__up__') mediaDropTarget = null
+  }
+
+  async function mediaUpDrop(e: DragEvent) {
+    if (!isInternalDrag(e) || !mediaDragging || !mediaCurrentPath) return
+    e.preventDefault(); e.stopPropagation()
+    const source = mediaDragging.path
+    const parentPath = mediaCurrentPath.split('/').slice(0, -1).join('/')
+    const dest = parentPath ? `${parentPath}/${mediaDragging.name}` : mediaDragging.name
+    mediaDragging = null; mediaDropTarget = null
+    await mediaMoveFile(source, dest)
+  }
+
+  async function mediaMoveFile(source: string, dest: string) {
+    if (!media?.move || source === dest) return
+    try {
+      await media.move(source, dest)
+      if (mediaSelected?.path === source) mediaSelected = null
       await browseMedia(mediaCurrentPath)
     } catch { }
   }
@@ -1408,7 +1508,7 @@
   <div class="rte-overlay" role="presentation" onclick={() => showMediaExplorer = false} onkeydown={(e) => { if (e.key === "Escape") showMediaExplorer = false }}>
     <div class="rte-media-explorer" role="dialog" tabindex="-1"
       onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}
-      ondragover={(e) => { e.preventDefault(); mediaDragOver = true }}
+      ondragover={(e) => { if (isInternalDrag(e)) return; e.preventDefault(); mediaDragOver = true }}
       ondragleave={() => mediaDragOver = false}
       ondrop={mediaHandleDrop}
     >
@@ -1437,7 +1537,13 @@
 
       <!-- Toolbar (nav + breadcrumbs + actions) -->
       <div class="rte-media-toolbar">
-        <button type="button" onclick={mediaGoUp} disabled={!mediaCurrentPath} class="rte-btn disabled:opacity-30" aria-label="Remonter">
+        <button type="button" onclick={mediaGoUp} disabled={!mediaCurrentPath}
+          class="rte-btn disabled:opacity-30 {mediaDropTarget === '__up__' ? 'ring-2 ring-violet-500/70 bg-violet-500/10' : ''}"
+          aria-label="Remonter"
+          ondragover={mediaUpDragOver}
+          ondragleave={mediaUpDragLeave}
+          ondrop={mediaUpDrop}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </button>
         <button type="button" onclick={() => mediaNavigateTo('')} class="rte-btn" aria-label="Racine">
@@ -1509,9 +1615,15 @@
             {#each mediaFiltered as entry}
               <!-- svelte-ignore a11y_no_static_element_interactions -->
               <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <div class="rte-media-item {mediaSelected?.path === entry.path ? 'rte-media-item-selected' : ''}"
+              <div class="rte-media-item {mediaSelected?.path === entry.path ? 'rte-media-item-selected' : ''} {mediaDropTarget === entry.path ? 'ring-2 ring-violet-500/70 bg-violet-500/10' : ''} {mediaDragging?.path === entry.path ? 'opacity-40' : ''}"
+                draggable={!!media.move}
                 onclick={() => handleMediaEntryClick(entry)}
                 ondblclick={() => handleMediaEntryDblClick(entry)}
+                ondragstart={(e) => mediaEntryDragStart(e, entry)}
+                ondragend={mediaEntryDragEnd}
+                ondragover={(e) => mediaEntryDragOver(e, entry)}
+                ondragleave={() => mediaEntryDragLeave(entry)}
+                ondrop={(e) => mediaEntryDrop(e, entry)}
               >
                 {#if entry.is_dir}
                   <div class="flex h-16 w-16 items-center justify-center">
@@ -1534,9 +1646,15 @@
             {#each mediaFiltered as entry, i}
               <!-- svelte-ignore a11y_no_static_element_interactions -->
               <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <div class="rte-media-list-item {i > 0 ? 'rte-media-list-divider' : ''} {mediaSelected?.path === entry.path ? 'bg-violet-500/10' : ''}"
+              <div class="rte-media-list-item {i > 0 ? 'rte-media-list-divider' : ''} {mediaSelected?.path === entry.path ? 'bg-violet-500/10' : ''} {mediaDropTarget === entry.path ? 'ring-2 ring-inset ring-violet-500/70 bg-violet-500/10' : ''} {mediaDragging?.path === entry.path ? 'opacity-40' : ''}"
+                draggable={!!media.move}
                 onclick={() => handleMediaEntryClick(entry)}
                 ondblclick={() => handleMediaEntryDblClick(entry)}
+                ondragstart={(e) => mediaEntryDragStart(e, entry)}
+                ondragend={mediaEntryDragEnd}
+                ondragover={(e) => mediaEntryDragOver(e, entry)}
+                ondragleave={() => mediaEntryDragLeave(entry)}
+                ondrop={(e) => mediaEntryDrop(e, entry)}
               >
                 {#if entry.is_dir}
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-400/80"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
@@ -1556,21 +1674,39 @@
 
       <!-- Footer -->
       <div class="rte-media-footer">
-        {#if mediaSelected}
-          <div class="flex items-center gap-3 flex-1 min-w-0">
-            {#if isImage(mediaSelected) && mediaSelected.url}
-              <img src={mediaSelected.url} alt="" class="h-10 w-10 rounded object-cover" />
-            {/if}
-            <div class="min-w-0">
-              <p class="truncate text-xs font-medium">{mediaSelected.name}</p>
-              <p class="text-[11px] opacity-40">{formatSize(mediaSelected.size)} · {mediaSelected.mime ?? 'Inconnu'}</p>
-            </div>
+        {#if mediaConfirmDelete}
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-red-400"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <div class="flex-1 min-w-0">
+            <p class="truncate text-xs font-medium">Supprimer "{mediaConfirmDelete.name}" ?</p>
+            <p class="text-[11px] opacity-60">{mediaConfirmDelete.is_dir ? 'Le dossier et son contenu seront supprimés.' : 'Cette action est irréversible.'}</p>
           </div>
+          <button type="button" onclick={() => mediaConfirmDelete = null} disabled={mediaDeleting} class="rte-btn-cancel">Annuler</button>
+          <button type="button" onclick={mediaHandleDelete} disabled={mediaDeleting} class="rte-btn-danger-text">
+            {mediaDeleting ? 'Suppression...' : 'Supprimer'}
+          </button>
         {:else}
-          <p class="flex-1 text-xs opacity-40">{mediaFiltered.length} élément{mediaFiltered.length !== 1 ? 's' : ''}</p>
+          {#if mediaSelected}
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+              {#if isImage(mediaSelected) && mediaSelected.url}
+                <img src={mediaSelected.url} alt="" class="h-10 w-10 rounded object-cover" />
+              {/if}
+              <div class="min-w-0">
+                <p class="truncate text-xs font-medium">{mediaSelected.name}</p>
+                <p class="text-[11px] opacity-40">{formatSize(mediaSelected.size)} · {mediaSelected.mime ?? 'Inconnu'}</p>
+              </div>
+            </div>
+          {:else}
+            <p class="flex-1 text-xs opacity-40">{mediaFiltered.length} élément{mediaFiltered.length !== 1 ? 's' : ''}</p>
+          {/if}
+          {#if mediaSelected && media.delete && mediaSelected.id != null}
+            <button type="button" onclick={() => mediaConfirmDelete = mediaSelected} class="rte-btn-danger-text" aria-label="Supprimer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Supprimer
+            </button>
+          {/if}
+          <button type="button" onclick={() => showMediaExplorer = false} class="rte-btn-cancel">Annuler</button>
+          <button type="button" onclick={() => { if (mediaSelected?.url) handleMediaSelect(mediaSelected.url) }} disabled={!mediaSelected?.url} class="rte-btn-primary">Sélectionner</button>
         {/if}
-        <button type="button" onclick={() => showMediaExplorer = false} class="rte-btn-cancel">Annuler</button>
-        <button type="button" onclick={() => { if (mediaSelected?.url) handleMediaSelect(mediaSelected.url) }} disabled={!mediaSelected?.url} class="rte-btn-primary">Sélectionner</button>
       </div>
     </div>
   </div>
