@@ -146,7 +146,7 @@
 
 <svelte:window onmouseup={handleDragEnd} onmousemove={handleDragMove} ontouchend={handleDragEnd} />
 
-<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
   role="region"
   aria-label="Carousel"

@@ -937,7 +937,7 @@
 <div role="toolbar" aria-label="Éditeur de texte riche" class="rte-wrapper {fullscreen ? 'fixed inset-0 z-40 rounded-none flex flex-col' : ''} {preserveStyles ? 'rte-wrapper-preserve' : ''} {className}">
 
   <!-- ═══ TOOLBAR ═══ -->
-  <div class="rte-toolbar" style="{toolbarMode === 'floating' ? 'display:none;' : ''}{toolbarMode === 'bottom' ? 'order:2;' : ''}">
+  <div class="rte-toolbar" style="{toolbarMode === 'floating' ? 'display:none;' : ''}{toolbarMode === 'bottom' ? 'order:2;' : ''}" onmousedown={(e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }}>
     <button type="button" onclick={() => exec('undo')} class="rte-btn" title="Annuler (Ctrl+Z)" aria-label="Annuler">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
     </button>
@@ -1132,7 +1132,7 @@
 
   <!-- ═══ FIND/REPLACE BAR ═══ -->
   {#if showFindReplace}
-    <div class="rte-findbar">
+    <div class="rte-findbar" onmousedown={(e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }}>
       <input type="text" bind:value={findText} placeholder="Rechercher..." class="rte-bar-input w-40" onkeydown={(e) => { if (e.key === 'Enter') findNext() }} />
       <input type="text" bind:value={replaceText} placeholder="Remplacer..." class="rte-bar-input w-40" />
       <button type="button" onclick={findNext} class="rte-bar-btn">Suivant</button>
@@ -1154,6 +1154,7 @@
         background:var(--karbon-bg-card);border:1px solid var(--karbon-border);
         border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.35);
         backdrop-filter:blur(12px);animation:karbon-float-in 0.15s ease;"
+      onmousedown={(e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }}
     >
       <button type="button" onclick={() => exec('bold')} class={isActive('bold')} title="Gras" aria-label="Gras"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg></button>
       <button type="button" onclick={() => exec('italic')} class={isActive('italic')} title="Italique" aria-label="Italique"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button>
@@ -1180,6 +1181,7 @@
         border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.35);
         backdrop-filter:blur(12px);animation:karbon-float-in 0.15s ease;
         font-size:11px;color:var(--karbon-text-2);"
+      onmousedown={(e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }}
     >
       <!-- Columns -->
       {#if selectedBlock.style.gridTemplateColumns}

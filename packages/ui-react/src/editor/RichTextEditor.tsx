@@ -629,7 +629,7 @@ export function RichTextEditor({
       <div role="toolbar" aria-label="Éditeur de texte riche" className={`rounded-xl border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] shadow-sm overflow-hidden ${fullscreen ? 'fixed inset-0 z-40 rounded-none flex flex-col' : ''} ${className}`}>
 
         {/* TOOLBAR */}
-        <div className="flex flex-wrap items-center gap-1 border-b border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/50 px-3 py-2 select-none">
+        <div className="flex flex-wrap items-center gap-1 border-b border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/50 px-3 py-2 select-none" onMouseDown={(e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }}>
           <TBtn onClick={() => exec('undo')} title="Annuler (Ctrl+Z)" label="Annuler">{icons.undo}</TBtn>
           <TBtn onClick={() => exec('redo')} title="Rétablir" label="Rétablir">{icons.redo}</TBtn>
           <span className={sepClass} />
@@ -689,7 +689,7 @@ export function RichTextEditor({
 
         {/* FIND/REPLACE */}
         {showFindReplace && (
-          <div className="flex items-center gap-2 border-b border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/30 px-4 py-2">
+          <div className="flex items-center gap-2 border-b border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/30 px-4 py-2" onMouseDown={(e) => { if ((e.target as HTMLElement).closest('button')) e.preventDefault() }}>
             <input type="text" value={findText} onChange={e => setFindText(e.target.value)} placeholder="Rechercher..." className={`${modalInput} w-40 !py-1 !px-2 !text-xs`} onKeyDown={e => { if (e.key === 'Enter') findNext() }} />
             <input type="text" value={replaceText} onChange={e => setReplaceText(e.target.value)} placeholder="Remplacer..." className={`${modalInput} w-40 !py-1 !px-2 !text-xs`} />
             <button type="button" onClick={findNext} className="bg-[var(--karbon-bg-2)] border border-[var(--karbon-border)] text-[var(--karbon-text-3)] rounded-md px-2.5 py-1 text-[0.6875rem] cursor-pointer hover:bg-[var(--karbon-bg-card)] hover:text-[var(--karbon-text)] transition-all">Suivant</button>
