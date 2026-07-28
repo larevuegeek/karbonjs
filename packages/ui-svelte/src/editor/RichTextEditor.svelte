@@ -252,6 +252,9 @@
   let editor = $state<HTMLDivElement>(undefined!)
   let sourceEl = $state<HTMLTextAreaElement>(undefined!)
   let lineNumbers = $state<HTMLDivElement>(undefined!)
+  // Couche de coloration : c'est ELLE que l'utilisateur lit (le textarea est
+  // transparent). Sans référence, impossible de la faire défiler avec lui.
+  let highlightLayer = $state<HTMLDivElement>(undefined!)
 
   // ── Editor state ──
   let sourceMode = $state(false)
@@ -892,7 +895,27 @@
   }
 
   function handleSourceInput() { value = sourceCode; updateLineNumbers() }
-  function handleSourceScroll() { if (lineNumbers && sourceEl) lineNumbers.scrollTop = sourceEl.scrollTop }
+  /**
+   * Le mode source superpose trois couches alignées au pixel : les numéros de
+   * ligne, la coloration syntaxique, et le textarea — dont le texte est
+   * TRANSPARENT (seul le curseur est visible). L'utilisateur lit donc la couche
+   * colorée et écrit dans le textarea.
+   *
+   * Seul le textarea défile réellement : les deux autres ont `overflow: hidden`
+   * et doivent être repositionnées à la main, sans quoi le code affiché reste
+   * figé pendant qu'on écrit plus bas — l'édition paraît alors ne rien faire.
+   *
+   * `scrollLeft` compte autant que `scrollTop` : `wrap="off"` autorise le
+   * défilement horizontal sur les longues lignes.
+   */
+  function handleSourceScroll() {
+    if (!sourceEl) return
+    if (lineNumbers) lineNumbers.scrollTop = sourceEl.scrollTop
+    if (highlightLayer) {
+      highlightLayer.scrollTop = sourceEl.scrollTop
+      highlightLayer.scrollLeft = sourceEl.scrollLeft
+    }
+  }
   function handleSourceKeydown(e: KeyboardEvent) {
     if (e.key !== 'Tab') return
     e.preventDefault()
@@ -1254,7 +1277,7 @@
   {#if sourceMode}
     <div class="rte-source-wrapper {fullscreen ? 'flex-1' : ''}" style="{fullscreen ? '' : 'height: 500px;'}">
       <div bind:this={lineNumbers} class="rte-line-numbers"></div>
-      <div class="rte-highlight-layer" aria-hidden="true">{@html highlightHtml(sourceCode)}</div>
+      <div bind:this={highlightLayer} class="rte-highlight-layer" aria-hidden="true">{@html highlightHtml(sourceCode)}</div>
       <textarea bind:this={sourceEl} bind:value={sourceCode} oninput={handleSourceInput} onkeydown={handleSourceKeydown} onscroll={handleSourceScroll} class="rte-source-textarea" spellcheck="false" wrap="off"></textarea>
     </div>
   {:else}
