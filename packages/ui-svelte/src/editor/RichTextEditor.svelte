@@ -438,8 +438,20 @@
       div.innerHTML = html
     }
 
+    // `class` et `id` sont CONSERVÉS.
+    //
+    // Ils étaient retirés de tout élément, ce qui visait le bruit collé depuis
+    // Word (MsoNormal & co.). Mais `cleanHtml` ne sert pas qu'au collage : il
+    // est aussi appliqué au CHARGEMENT (onMount). Un contenu enregistré avec ses
+    // classes les perdait donc à la simple réouverture de l'éditeur, et
+    // l'enregistrement suivant gravait la perte. Pour un CMS dont les gabarits
+    // reposent sur des classes, l'éditeur détruisait le travail à chaque
+    // ouverture, sans rien signaler.
+    //
+    // Ce ne sont pas des vecteurs d'attaque : ce qui l'est - <script>, <meta>,
+    // <link> et les gestionnaires on* - est retiré juste en dessous, et c'est
+    // cela qui protège réellement.
     div.querySelectorAll('*').forEach(el => {
-      el.removeAttribute('class'); el.removeAttribute('id')
       if (!preserveStyles) {
         const style = el.getAttribute('style')
         if (style) {
