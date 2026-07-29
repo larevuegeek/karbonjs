@@ -14,11 +14,16 @@
     "node": ">=20",
     "pnpm": ">=10"
   },
+  "pnpm": {
+    "overrides": {
+      "cookie": "^0.7.2"
+    }
+  },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
-    "simple-icons": "^16.14.0"
+    "simple-icons": "^16.27.1"
   }
 }
