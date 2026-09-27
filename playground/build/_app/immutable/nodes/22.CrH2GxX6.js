@@ -1,0 +1,30 @@
+import{A as e,D as t,G as n,J as r,K as i,O as a,T as o,V as s,ct as c,q as l,w as u}from"../chunks/B-3x_64Z.js";import"../chunks/xihTtKlq.js";import"../chunks/BQfviTfZ.js";import{_ as d,g as f}from"../chunks/Czp43ix-.js";import{t as p}from"../chunks/uEASi3Rw.js";var m=e(`<div class="flex flex-wrap gap-4"><!> <!></div>`),h=e(`<div class="flex flex-wrap gap-6"><div><span class="text-xs block mb-2" style="color:var(--karbon-text-4);">Default (120px)</span> <!></div> <div><span class="text-xs block mb-2" style="color:var(--karbon-text-4);">Grande loupe (180px) × Zoom 3x</span> <!></div> <div><span class="text-xs block mb-2" style="color:var(--karbon-text-4);">Couleur violet</span> <!></div></div>`),g=e(`<div class="flex gap-8"><!></div>`),_=e(`<div><span class="text-xs block mb-2" style="color:var(--karbon-text-4);"> </span> <!></div>`),v=e(`<div class="flex flex-wrap gap-4"></div>`),y=e(`<h1 class="text-3xl font-bold mb-2">ImgZoom</h1> <p class="text-[var(--karbon-text-3)] mb-8">Zoom d'image avec 3 modes : overlay, loupe et side panel.</p> <div class="rounded-xl p-6 mb-8" style="background:var(--karbon-bg-2);border:1px solid var(--karbon-border);"><h2 class="text-lg font-semibold mb-3">Utilisation</h2> <!></div> <!> <!> <!> <!> <!> <!> <!>`,1);function b(e){var b=y(),x=r(i(b),4),S=r(n(x),2);d(S,{code:`<script lang="ts">
+  import { ImgZoom } from '@karbonjs/ui-svelte'
+<\/script>
+
+<!-- Overlay (default) — zoom au survol -->
+<ImgZoom src="/photo.jpg" alt="Photo" width="300px" rounded="lg" zoom={2.5} />
+
+<!-- Loupe — style e-commerce -->
+<ImgZoom src="/product.jpg" alt="Produit" width="300px" mode="lens" lensSize={150} color="violet" />
+
+<!-- Side panel — fiche produit -->
+<ImgZoom src="/product.jpg" zoomSrc="/product-hd.jpg" alt="Produit"
+  width="250px" height="250px" mode="side" color="cyan" />`,language:`svelte`,title:`Example.svelte`,lineCopy:!0}),c(x);var C=r(x,2);p(C,{title:`Overlay (default)`,description:`L'image se zoom sur elle-meme au survol. Ideal pour les galeries.`,code:`<ImgZoom src="/photo.jpg" alt="Photo" width="280px" rounded="lg" />
+<ImgZoom src="/photo.jpg" alt="Photo" width="280px" rounded="lg" zoom={3} />`,children:e=>{var t=m(),i=n(t);f(i,{src:`https://picsum.photos/seed/zoom1/600/400`,alt:`Photo 1`,width:`280px`,rounded:`lg`});var o=r(i,2);f(o,{src:`https://picsum.photos/seed/zoom2/600/400`,alt:`Photo 2`,width:`280px`,rounded:`lg`,zoom:3}),c(t),a(e,t)},$$slots:{default:!0}});var w=r(C,2);p(w,{title:`Overlay × Click`,description:`Cliquez pour activer/desactiver le zoom. Deplacez la souris pour explorer.`,code:`<ImgZoom src="/photo.jpg" alt="Photo" width="400px" rounded="xl" trigger="click" />`,children:e=>{f(e,{src:`https://picsum.photos/seed/zoom3/800/500`,alt:`Photo 3`,width:`400px`,rounded:`xl`,trigger:`click`})},$$slots:{default:!0}});var T=r(w,2);p(T,{title:`Loupe (lens)`,description:`Une loupe circulaire suit la souris. Style e-commerce.`,code:`<ImgZoom src="/photo.jpg" alt="Lens" width="280px" rounded="lg" mode="lens" />
+<ImgZoom src="/photo.jpg" alt="Lens" width="280px" rounded="lg" mode="lens" lensSize={180} zoom={3} />
+<ImgZoom src="/photo.jpg" alt="Lens" width="280px" rounded="lg" mode="lens" color="violet" />`,children:e=>{var t=h(),i=n(t),o=r(n(i),2);f(o,{src:`https://picsum.photos/seed/zoom4/600/400`,alt:`Lens`,width:`280px`,rounded:`lg`,mode:`lens`}),c(i);var s=r(i,2),l=r(n(s),2);f(l,{src:`https://picsum.photos/seed/zoom5/600/400`,alt:`Lens big`,width:`280px`,rounded:`lg`,mode:`lens`,lensSize:180,zoom:3}),c(s);var u=r(s,2),d=r(n(u),2);f(d,{src:`https://picsum.photos/seed/zoom6/600/400`,alt:`Lens color`,width:`280px`,rounded:`lg`,mode:`lens`,color:`violet`}),c(u),c(t),a(e,t)},$$slots:{default:!0}});var E=r(T,2);p(E,{title:`Side panel`,description:`Le zoom s'affiche dans un panel a droite. Ideal pour les fiches produit.`,code:`<ImgZoom src="/photo.jpg" alt="Side" width="250px" height="250px" rounded="lg" mode="side" color="cyan" />`,children:e=>{var t=g(),r=n(t);f(r,{src:`https://picsum.photos/seed/zoom8/400/400`,alt:`Side`,width:`250px`,height:`250px`,rounded:`lg`,mode:`side`,color:`cyan`}),c(t),a(e,t)},$$slots:{default:!0}});var D=r(E,2);p(D,{title:`Niveaux de zoom`,description:`De 1.5x a 5x.`,code:`<ImgZoom src="/photo.jpg" alt="Zoom" width="180px" rounded="md" zoom={1.5} />
+<ImgZoom src="/photo.jpg" alt="Zoom" width="180px" rounded="md" zoom={3} />
+<ImgZoom src="/photo.jpg" alt="Zoom" width="180px" rounded="md" zoom={5} />`,children:e=>{var i=v();u(i,4,()=>[1.5,2,3,4,5],o,(e,i)=>{var o=_(),u=n(o),d=l(u),p=r(u,2);f(p,{src:`https://picsum.photos/seed/zoomlvl/400/300`,get alt(){return`Zoom ${i??``}x`},width:`180px`,rounded:`md`,get zoom(){return i}}),c(o),s(()=>t(d,`${i??``}x`)),a(e,o)}),c(i),a(e,i)},$$slots:{default:!0}});var O=r(D,2);p(O,{title:`Arrondis`,description:`6 niveaux d'arrondi.`,code:`<ImgZoom src="/photo.jpg" alt="Rounded" width="120px" height="120px" rounded="none" mode="lens" />
+<ImgZoom src="/photo.jpg" alt="Rounded" width="120px" height="120px" rounded="xl" mode="lens" />
+<ImgZoom src="/photo.jpg" alt="Rounded" width="120px" height="120px" rounded="full" mode="lens" />`,children:e=>{var i=v();u(i,4,()=>[`none`,`sm`,`md`,`lg`,`xl`,`full`],o,(e,i)=>{var o=_(),u=n(o),d=l(u,!0),p=r(u,2);f(p,{src:`https://picsum.photos/seed/zoomround/200/200`,get alt(){return`Rounded ${i??``}`},width:`120px`,height:`120px`,get rounded(){return i},mode:`lens`,lensSize:80,color:`pink`}),c(o),s(()=>t(d,i)),a(e,o)}),c(i),a(e,i)},$$slots:{default:!0}});var k=r(O,2);p(k,{title:`Image HD pour le zoom`,description:`L'image affichee est en basse resolution, le zoom charge une version HD.`,code:`<ImgZoom
+  src="/photo-low.jpg"
+  zoomSrc="/photo-hd.jpg"
+  alt="HD zoom"
+  width="350px"
+  rounded="xl"
+  mode="lens"
+  lensSize={160}
+  zoom={3}
+  color="blue"
+/>`,children:e=>{f(e,{src:`https://picsum.photos/seed/zoomhd/400/300`,zoomSrc:`https://picsum.photos/seed/zoomhd/1600/1200`,alt:`HD zoom`,width:`350px`,rounded:`xl`,mode:`lens`,lensSize:160,zoom:3,color:`blue`})},$$slots:{default:!0}}),a(e,b)}export{b as component};

@@ -1,0 +1,41 @@
+import{A as e,D as t,E as n,G as r,J as i,K as a,L as o,M as s,O as c,T as l,V as u,X as d,Y as f,Z as p,_ as m,ct as h,et as g,it as _,k as v,lt as y,m as b,q as x,rt as S,st as C,w}from"../chunks/B-3x_64Z.js";import"../chunks/xihTtKlq.js";import{F as T,_ as E,n as D}from"../chunks/Czp43ix-.js";import{t as O}from"../chunks/uEASi3Rw.js";var k=e(`<span class="font-medium" style="color: var(--karbon-text);"> </span>`),A=e(`<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium"> </span>`),j=e(`<div class="flex items-center justify-end gap-1"><!> <!></div>`),M=e(`<img alt="" class="h-8 w-8 rounded-full object-cover"/>`),N=e(`<span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:color-mix(in srgb,var(--karbon-success) 15%,transparent);color:var(--karbon-success);"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>`),P=e(`<span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:color-mix(in srgb,var(--karbon-danger) 15%,transparent);color:var(--karbon-danger);"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></span>`),F=e(`<div class="mt-3 p-3 rounded-lg text-xs" style="background: var(--karbon-bg-2); color: var(--karbon-text-2);"> </div>`),I=e(`<!> <!>`,1),L=e(`<div class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>`),R=e(`<h1 class="text-3xl font-bold mb-2">DataTable</h1> <p class="text-[var(--karbon-text-3)] mb-8">Tableau de donnees complet avec tri, recherche, filtres, selection, pagination et export.</p> <div class="rounded-xl p-6 mb-8" style="background:var(--karbon-bg-2);border:1px solid var(--karbon-border);"><h2 class="text-lg font-semibold mb-3">Utilisation</h2> <!></div> <!> <!> <!> <!> <!>`,1);function z(e,z){_(z,!0);let B=Array.from({length:47},(e,t)=>({id:t+1,avatar:`https://picsum.photos/seed/user${t}/40/40`,name:[`Alice Martin`,`Bob Dupont`,`Claire Morel`,`David Petit`,`Emma Laurent`,`Frank Bernard`,`Grace Thomas`,`Hugo Robert`,`Iris Durand`,`Jules Moreau`][t%10],email:`user${t+1}@example.com`,role:[`Admin`,`Editeur`,`Moderateur`,`Utilisateur`][t%4],status:t%5!=0,visits:Math.floor(Math.random()*5e3),created:new Date(2025,Math.floor(Math.random()*12),Math.floor(Math.random()*28)+1).toISOString()})),V=[{key:`avatar`,label:``,type:`image`,width:`50px`},{key:`name`,label:`Nom`,sortable:!0,sticky:!0},{key:`email`,label:`Email`,sortable:!0},{key:`role`,label:`Role`,sortable:!0,filterable:!0,options:[`Admin`,`Editeur`,`Moderateur`,`Utilisateur`]},{key:`status`,label:`Actif`,type:`boolean`,align:`center`,width:`80px`},{key:`visits`,label:`Visites`,type:`number`,sortable:!0,align:`right`},{key:`created`,label:`Inscription`,type:`date`,sortable:!0},{key:`actions`,label:``,type:`actions`,width:`120px`,align:`right`}],H=p(f([])),U=p(!1);function W(){d(U,!0),setTimeout(()=>d(U,!1),2e3)}var G=R(),K=i(a(G),4),q=i(r(K),2);E(q,{code:`<script lang="ts">
+  import { DataTable } from '@karbonjs/ui-svelte'
+
+  const data = [
+    { id: 1, name: 'Alice', email: 'alice@example.com', role: 'Admin' },
+    { id: 2, name: 'Bob', email: 'bob@example.com', role: 'Editeur' },
+  ]
+
+  const columns = [
+    { key: 'name', label: 'Nom', sortable: true },
+    { key: 'email', label: 'Email', sortable: true },
+    { key: 'role', label: 'Role', filterable: true, options: ['Admin', 'Editeur'] },
+  ]
+<\/script>
+
+<DataTable {data} {columns} searchable selectable perPage={10} color="violet" />`,language:`svelte`,title:`Example.svelte`,lineCopy:!0}),h(K);var J=i(K,2);O(J,{title:`Complet`,description:`Toutes les fonctionnalites : tri, recherche, filtres, selection, pagination, export.`,code:`<DataTable
+  data={users}
+  {columns}
+  selectable searchable
+  perPage={10} showPerPage exportable
+  striped color="violet"
+/>`,children:e=>{var l=I(),f=a(l);D(f,{get data(){return B},get columns(){return V},selectable:!0,searchable:!0,perPage:10,showPerPage:!0,exportable:!0,exportFilename:`utilisateurs`,striped:!0,color:`violet`,onselect:e=>d(H,e,!0),onrowclick:e=>console.log(`Click:`,e),cell:(e,o=y,l=y,d=y)=>{var f=v(),p=a(f),g=e=>{var n=k(),r=x(n,!0);u(()=>t(r,l().name)),c(e,n)},_=e=>{var n=A(),r=x(n,!0);u(()=>{m(n,`background: color-mix(in srgb, ${l().role===`Admin`?`var(--karbon-red-500)`:l().role===`Editeur`?`var(--karbon-violet-500)`:l().role===`Moderateur`?`var(--karbon-blue-500)`:`var(--karbon-emerald-500)`} 15%, transparent); color: ${l().role===`Admin`?`var(--karbon-red-400)`:l().role===`Editeur`?`var(--karbon-violet-400)`:l().role===`Moderateur`?`var(--karbon-blue-400)`:`var(--karbon-emerald-400)`};`),t(r,l().role)}),c(e,n)},S=e=>{var t=j(),n=r(t);T(n,{size:`2xs`,variant:`ghost`,onclick:e=>{e.stopPropagation()},children:(e,t)=>{C();var n=s(`Editer`);c(e,n)},$$slots:{default:!0}});var a=i(n,2);T(a,{size:`2xs`,variant:`ghost`,color:`red`,onclick:e=>{e.stopPropagation()},children:(e,t)=>{C();var n=s(`Sup.`);c(e,n)},$$slots:{default:!0}}),h(t),c(e,t)},w=e=>{var t=v(),r=a(t),i=e=>{var t=M();u(()=>b(t,`src`,l()[o().key])),c(e,t)};n(r,e=>{l()[o().key]&&e(i)}),c(e,t)},E=e=>{var t=v(),r=a(t),i=e=>{var t=N();c(e,t)},s=e=>{var t=P();c(e,t)};n(r,e=>{l()[o().key]?e(i):e(s,-1)}),c(e,t)},D=e=>{var n=s();u(e=>t(n,e),[()=>new Date(l()[o().key]).toLocaleDateString(`fr-FR`)]),c(e,n)},O=e=>{var n=s();u(e=>t(n,e),[()=>Number(l()[o().key]).toLocaleString(`fr-FR`)]),c(e,n)},F=e=>{var n=s();u(()=>t(n,l()[o().key])),c(e,n)};n(p,e=>{o().key===`name`?e(g):o().key===`role`?e(_,1):o().key===`actions`?e(S,2):o().type===`image`?e(w,3):o().type===`boolean`?e(E,4):o().type===`date`?e(D,5):o().type===`number`?e(O,6):e(F,-1)}),c(e,f)},$$slots:{cell:!0}});var p=i(f,2),g=e=>{var n=F(),r=x(n);u(e=>t(r,`${o(H).length??``} utilisateur${o(H).length>1?`s`:``} selectionne${o(H).length>1?`s`:``}: ${e??``}`),[()=>o(H).map(e=>e.name).join(`, `)]),c(e,n)};n(p,e=>{o(H).length>0&&e(g)}),c(e,l)},$$slots:{default:!0}});var Y=i(J,2);O(Y,{title:`Compact`,description:`Mode compact avec moins de padding.`,code:`<DataTable
+  data={users.slice(0, 5)}
+  columns={columns}
+  compact hoverable
+/>`,children:e=>{{let t=g(()=>B.slice(0,5));D(e,{get data(){return o(t)},columns:[{key:`name`,label:`Nom`,sortable:!0},{key:`email`,label:`Email`},{key:`role`,label:`Role`}],compact:!0,hoverable:!0})}},$$slots:{default:!0}});var X=i(Y,2);O(X,{title:`Loading`,description:`Etat de chargement avec skeleton.`,code:`<DataTable
+  data={[]}
+  columns={columns}
+  loading={true}
+  hoverable
+/>`,children:e=>{var t=I(),n=a(t);T(n,{size:`sm`,variant:`flat`,color:`violet`,onclick:W,class:`mb-3`,children:(e,t)=>{C();var n=s(`Simuler chargement`);c(e,n)},$$slots:{default:!0}});var r=i(n,2);{let e=g(()=>o(U)?[]:B.slice(0,5));D(r,{get data(){return o(e)},columns:[{key:`name`,label:`Nom`},{key:`email`,label:`Email`},{key:`role`,label:`Role`},{key:`status`,label:`Actif`,type:`boolean`}],get loading(){return o(U)},hoverable:!0})}c(e,t)},$$slots:{default:!0}});var Z=i(X,2);O(Z,{title:`Colors`,description:`Couleurs de selection et tri.`,code:`<DataTable
+  data={users}
+  columns={columns}
+  selectable
+  color="emerald"
+  compact
+/>`,children:e=>{var t=L();w(t,20,()=>[`emerald`,`violet`,`cyan`,`pink`],l,(e,t)=>{{let n=g(()=>B.slice(0,3));D(e,{get data(){return o(n)},columns:[{key:`name`,label:`Nom`,sortable:!0},{key:`role`,label:`Role`}],selectable:!0,get color(){return t},compact:!0})}}),h(t),c(e,t)},$$slots:{default:!0}});var Q=i(Z,2);O(Q,{title:`Empty State`,description:`Affichage quand il n'y a aucune donnee.`,code:`<DataTable
+  data={[]}
+  columns={columns}
+  searchable
+/>`,children:e=>{D(e,{data:[],columns:[{key:`name`,label:`Nom`},{key:`email`,label:`Email`}],searchable:!0})},$$slots:{default:!0}}),c(e,G),S()}export{z as component};

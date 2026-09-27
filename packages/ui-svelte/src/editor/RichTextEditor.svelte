@@ -291,10 +291,11 @@
   let imageAlt = $state('')
   let imageTitle = $state('')
   let imageClass = $state('')
-  let imageStyle = $state('')
   let imageWidth = $state('')
   let imageHeight = $state('')
   let imageAlign = $state('')
+  let imageNatural = $state({ w: 0, h: 0 })
+  let imageLockRatio = $state(true)
   let imageUploading = $state(false)
   let targetImage: HTMLImageElement | null = null
 
@@ -322,6 +323,11 @@
   let elPropsStyle = $state('')
   let elPropsId = $state('')
   let elPropsTarget = $state<HTMLElement | null>(null)
+  let elClassList = $state<string[]>([])
+  let elClassDraft = $state('')
+  let elStyleRows = $state<{ prop: string; val: string }[]>([])
+  let elStyleRaw = $state(false)
+  let elPropsPreview = $state('')
 
   // ── Media explorer state ──
   let mediaCurrentPath = $state('')
@@ -510,24 +516,63 @@
   }
 
   // ── Image properties ──
+  /** Returns the inline style of an image without the properties managed by the alignment control */
+  function customImageStyle(img: HTMLImageElement, align: string): string {
+    const tmp = document.createElement('span')
+    tmp.setAttribute('style', img.getAttribute('style') ?? '')
+    tmp.style.removeProperty('float')
+    if (align === 'center') { tmp.style.removeProperty('display'); tmp.style.removeProperty('margin') }
+    return tmp.getAttribute('style') ?? ''
+  }
+
   function openImageProps(img: HTMLImageElement) {
     targetImage = img; imageUrl = img.src; imageAlt = img.alt ?? ''; imageTitle = img.title ?? ''
-    imageClass = img.className ?? ''; imageStyle = img.getAttribute('style') ?? ''
     imageWidth = img.width ? String(img.width) : ''; imageHeight = img.height ? String(img.height) : ''
+    imageNatural = { w: img.naturalWidth, h: img.naturalHeight }
+    imageLockRatio = true
     imageAlign = img.style.float || (img.style.display === 'block' && img.style.margin === '0px auto' ? 'center' : '') || ''
+    // Classes and style editors are shared with the element properties modal
+    elClassList = (img.className ?? '').split(/\s+/).filter(Boolean); elClassDraft = ''
+    elPropsStyle = customImageStyle(img, imageAlign); elStyleRows = parseStyleDecls(elPropsStyle); elStyleRaw = false
     showImagePropsModal = true; showContextMenu = false
+  }
+
+  /** Aspect ratio used by the width/height lock: natural size first, then current attributes */
+  function imageRatio(): number {
+    if (imageNatural.w && imageNatural.h) return imageNatural.w / imageNatural.h
+    const w = parseInt(imageWidth), h = parseInt(imageHeight)
+    return w && h ? w / h : 0
+  }
+
+  function onImageWidthInput() {
+    const w = parseInt(imageWidth), r = imageRatio()
+    if (imageLockRatio && w && r) imageHeight = String(Math.round(w / r))
+  }
+
+  function onImageHeightInput() {
+    const h = parseInt(imageHeight), r = imageRatio()
+    if (imageLockRatio && h && r) imageWidth = String(Math.round(h * r))
+  }
+
+  function resetImageSize() {
+    if (imageNatural.w) { imageWidth = String(imageNatural.w); imageHeight = String(imageNatural.h) }
   }
 
   function applyImageProps() {
     if (!targetImage) return
-    targetImage.alt = imageAlt; targetImage.title = imageTitle; targetImage.className = imageClass
-    if (imageWidth) targetImage.width = parseInt(imageWidth); else targetImage.removeAttribute('width')
-    if (imageHeight) targetImage.height = parseInt(imageHeight); else targetImage.removeAttribute('height')
-    targetImage.style.float = ''; targetImage.style.display = ''; targetImage.style.margin = ''
+    if (elClassDraft.trim()) addElClass(elClassDraft)
+    targetImage.alt = imageAlt; targetImage.title = imageTitle
+    if (!imageTitle) targetImage.removeAttribute('title')
+    if (elClassList.length) targetImage.className = elClassList.join(' '); else targetImage.removeAttribute('class')
+    if (parseInt(imageWidth)) targetImage.width = parseInt(imageWidth); else targetImage.removeAttribute('width')
+    if (parseInt(imageHeight)) targetImage.height = parseInt(imageHeight); else targetImage.removeAttribute('height')
+    // The style editor is the source of truth: replace, never append
+    const style = elStyleRaw ? serializeStyleDecls(parseStyleDecls(elPropsStyle)) : serializeStyleDecls(elStyleRows)
+    targetImage.setAttribute('style', style)
     if (imageAlign === 'left') targetImage.style.float = 'left'
     else if (imageAlign === 'right') targetImage.style.float = 'right'
     else if (imageAlign === 'center') { targetImage.style.display = 'block'; targetImage.style.margin = '0 auto' }
-    if (imageStyle) { const existing = targetImage.getAttribute('style') ?? ''; targetImage.setAttribute('style', existing + ';' + imageStyle) }
+    if (!targetImage.getAttribute('style')?.trim()) targetImage.removeAttribute('style')
     showImagePropsModal = false; value = editor.innerHTML
   }
 
@@ -816,18 +861,70 @@
   }
 
   // ── Element properties ──
+  /** Splits an inline style string into declarations, ignoring `;` inside parentheses or quotes */
+  function parseStyleDecls(css: string): { prop: string; val: string }[] {
+    const out: { prop: string; val: string }[] = []
+    let buf = '', depth = 0, quote = ''
+    const flush = () => {
+      const i = buf.indexOf(':')
+      if (i > 0) { const prop = buf.slice(0, i).trim(); const val = buf.slice(i + 1).trim(); if (prop) out.push({ prop, val }) }
+      buf = ''
+    }
+    for (const ch of css) {
+      if (quote) { if (ch === quote) quote = '' }
+      else if (ch === '"' || ch === "'") quote = ch
+      else if (ch === '(') depth++
+      else if (ch === ')') depth = Math.max(0, depth - 1)
+      else if (ch === ';' && depth === 0) { flush(); continue }
+      buf += ch
+    }
+    flush()
+    return out
+  }
+
+  /** Serializes style declarations back to an inline style string (last duplicate wins) */
+  function serializeStyleDecls(rows: { prop: string; val: string }[]): string {
+    const map = new Map<string, string>()
+    for (const r of rows) { const p = r.prop.trim().toLowerCase(); const v = r.val.trim(); if (p && v) { map.delete(p); map.set(p, v) } }
+    return [...map].map(([p, v]) => `${p}: ${v}`).join('; ')
+  }
+
   function openElementProps(el?: HTMLElement) {
     const target = el ?? contextTarget; if (!target || target === editor) return
     elPropsTarget = target; elPropsTag = target.tagName.toLowerCase()
     elPropsClass = target.className ?? ''; elPropsStyle = target.getAttribute('style') ?? ''; elPropsId = target.id ?? ''
+    elClassList = elPropsClass.split(/\s+/).filter(Boolean); elClassDraft = ''
+    elStyleRows = parseStyleDecls(elPropsStyle); elStyleRaw = false
+    const text = (target.textContent ?? '').trim().replace(/\s+/g, ' ')
+    elPropsPreview = text.length > 60 ? text.slice(0, 60) + '…' : text
     showElementProps = true; showContextMenu = false
+  }
+
+  function addElClass(raw: string) {
+    const names = raw.split(/[\s,]+/).filter(Boolean)
+    elClassList = [...elClassList, ...names.filter(n => !elClassList.includes(n))]
+    elClassDraft = ''
+  }
+
+  function handleElClassKey(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === ',') { e.preventDefault(); if (elClassDraft.trim()) addElClass(elClassDraft) }
+    else if (e.key === 'Backspace' && !elClassDraft && elClassList.length) elClassList = elClassList.slice(0, -1)
+  }
+
+  function toggleElStyleRaw() {
+    if (elStyleRaw) elStyleRows = parseStyleDecls(elPropsStyle)
+    else elPropsStyle = serializeStyleDecls(elStyleRows)
+    elStyleRaw = !elStyleRaw
   }
 
   function applyElementProps() {
     if (!elPropsTarget) return
-    elPropsTarget.className = elPropsClass
-    if (elPropsStyle) elPropsTarget.setAttribute('style', elPropsStyle); else elPropsTarget.removeAttribute('style')
-    if (elPropsId) elPropsTarget.id = elPropsId; else elPropsTarget.removeAttribute('id')
+    if (elClassDraft.trim()) addElClass(elClassDraft)
+    const style = elStyleRaw ? serializeStyleDecls(parseStyleDecls(elPropsStyle)) : serializeStyleDecls(elStyleRows)
+    const id = elPropsId.trim().replace(/\s+/g, '-')
+    if (elClassList.length) elPropsTarget.className = elClassList.join(' '); else elPropsTarget.removeAttribute('class')
+    if (style) elPropsTarget.setAttribute('style', style); else elPropsTarget.removeAttribute('style')
+    if (id) elPropsTarget.id = id; else elPropsTarget.removeAttribute('id')
     showElementProps = false; value = editor.innerHTML
   }
 
@@ -1438,39 +1535,184 @@
   </div>
 {/if}
 
+<!-- ═══ SHARED PROPS EDITORS (image + element modals) ═══ -->
+{#snippet classEditor()}
+  <div class="space-y-1.5">
+    <div class="flex items-center justify-between">
+      <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Classes CSS</span>
+      {#if elClassList.length}<span class="text-[11px] text-[var(--karbon-text-4)]">{elClassList.length} classe{elClassList.length > 1 ? 's' : ''}</span>{/if}
+    </div>
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div class="flex min-h-[42px] cursor-text flex-wrap items-center gap-1.5 rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] px-2 py-1.5 transition-colors focus-within:border-violet-500/70 focus-within:ring-2 focus-within:ring-violet-500/20" onclick={(e) => (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus()}>
+      {#each elClassList as cls, i (cls)}
+        <span class="group inline-flex items-center gap-1 rounded-md bg-violet-500/15 py-0.5 pr-1 pl-2 font-mono text-[11px] text-violet-200 ring-1 ring-violet-500/25">
+          .{cls}
+          <button type="button" onclick={(e) => { e.stopPropagation(); elClassList = elClassList.filter((_, j) => j !== i) }} class="flex h-4 w-4 cursor-pointer items-center justify-center rounded text-violet-300/70 transition-colors hover:bg-violet-500/30 hover:text-white" aria-label="Retirer la classe {cls}"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+        </span>
+      {/each}
+      <input type="text" bind:value={elClassDraft} onkeydown={handleElClassKey} onblur={() => { if (elClassDraft.trim()) addElClass(elClassDraft) }} onpaste={(e) => { const t = e.clipboardData?.getData('text') ?? ''; if (/[\s,]/.test(t)) { e.preventDefault(); addElClass(elClassDraft + t) } }} placeholder={elClassList.length ? 'Ajouter…' : 'ex: text-center font-bold'} spellcheck="false" autocomplete="off" aria-label="Ajouter une classe CSS" class="min-w-[100px] flex-1 bg-transparent px-1 py-0.5 font-mono text-xs text-[var(--karbon-text)] outline-none placeholder:text-[var(--karbon-text-4)]/60" />
+    </div>
+    <p class="text-[11px] text-[var(--karbon-text-4)]/80">Entrée, espace ou virgule pour valider · Retour arrière pour retirer la dernière</p>
+  </div>
+{/snippet}
+
+{#snippet styleEditor()}
+  <div class="space-y-1.5">
+    <div class="flex items-center justify-between">
+      <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Style inline</span>
+      <div class="inline-flex rounded-md bg-[var(--karbon-bg-2)] p-0.5 ring-1 ring-[var(--karbon-border)]" role="group" aria-label="Mode d'édition du style">
+        <button type="button" onclick={() => { if (elStyleRaw) toggleElStyleRaw() }} aria-pressed={!elStyleRaw} class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {!elStyleRaw ? 'bg-violet-600 text-white shadow-sm' : 'text-[var(--karbon-text-4)] hover:text-[var(--karbon-text-2)]'}">Propriétés</button>
+        <button type="button" onclick={() => { if (!elStyleRaw) toggleElStyleRaw() }} aria-pressed={elStyleRaw} class="cursor-pointer rounded px-2 py-0.5 text-[11px] font-medium transition-colors {elStyleRaw ? 'bg-violet-600 text-white shadow-sm' : 'text-[var(--karbon-text-4)] hover:text-[var(--karbon-text-2)]'}">CSS brut</button>
+      </div>
+    </div>
+
+    {#if elStyleRaw}
+      <textarea bind:value={elPropsStyle} rows="5" spellcheck="false" placeholder="color: #a78bfa;&#10;font-size: 1.25rem;" aria-label="Style inline brut" class="block w-full resize-y rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] px-3 py-2 font-mono text-xs leading-relaxed text-[var(--karbon-text)] outline-none transition-colors placeholder:text-[var(--karbon-text-4)]/60 focus:border-violet-500/70 focus:ring-2 focus:ring-violet-500/20"></textarea>
+    {:else}
+      <div class="overflow-hidden rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)]">
+        {#each elStyleRows as row, i}
+          <div class="group flex items-center gap-1 border-b border-[var(--karbon-border-input)] px-2 py-1 font-mono text-xs last:border-b-0 focus-within:bg-violet-500/5">
+            <input type="text" bind:value={row.prop} placeholder="propriété" spellcheck="false" autocomplete="off" aria-label="Propriété CSS" class="w-[42%] min-w-0 rounded bg-transparent px-1.5 py-1 text-sky-300 outline-none placeholder:text-[var(--karbon-text-4)]/50 focus:bg-[var(--karbon-bg-2)]" />
+            <span class="text-[var(--karbon-text-4)]">:</span>
+            <input type="text" bind:value={row.val} placeholder="valeur" spellcheck="false" autocomplete="off" aria-label="Valeur CSS" onkeydown={(e) => { if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); elStyleRows = [...elStyleRows, { prop: '', val: '' }] } }} class="min-w-0 flex-1 rounded bg-transparent px-1.5 py-1 text-amber-200 outline-none placeholder:text-[var(--karbon-text-4)]/50 focus:bg-[var(--karbon-bg-2)]" />
+            <button type="button" onclick={() => { elStyleRows = elStyleRows.filter((_, j) => j !== i) }} class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded text-[var(--karbon-text-4)] opacity-0 transition-all group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-red-500/15 hover:text-red-400" aria-label="Supprimer la propriété {row.prop}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+        {:else}
+          <p class="px-3 py-3 text-center text-xs text-[var(--karbon-text-4)]">Aucun style inline</p>
+        {/each}
+        <button type="button" onclick={() => { elStyleRows = [...elStyleRows, { prop: '', val: '' }] }} class="flex w-full cursor-pointer items-center justify-center gap-1.5 border-t border-dashed border-[var(--karbon-border-input)] py-2 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/10 hover:text-violet-300">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Ajouter une propriété
+        </button>
+      </div>
+    {/if}
+  </div>
+{/snippet}
+
 <!-- ═══ IMAGE PROPS MODAL ═══ -->
 {#if showImagePropsModal}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="rte-overlay" role="presentation" onclick={() => showImagePropsModal = false} onkeydown={(e) => { if (e.key === "Escape") showImagePropsModal = false }}>
-    <div class="rte-modal max-w-lg" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
-      <div class="rte-modal-header">
-        <h3>Propriétés de l'image</h3>
-        <button type="button" onclick={() => showImagePropsModal = false} class="rte-modal-close" aria-label="Fermer"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-      </div>
-      {#if imageUrl}<div class="rte-preview-box mb-4"><img src={imageUrl} alt="" class="mx-auto max-h-32 object-contain" /></div>{/if}
-      <div class="space-y-3">
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-1"><span class="rte-label">Largeur</span><input type="text" bind:value={imageWidth} placeholder="auto" class="rte-input" /></div>
-          <div class="space-y-1"><span class="rte-label">Hauteur</span><input type="text" bind:value={imageHeight} placeholder="auto" class="rte-input" /></div>
+    <div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] shadow-2xl shadow-black/40 ring-1 ring-white/5" role="dialog" aria-modal="true" aria-labelledby="rte-imgprops-title" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { e.stopPropagation(); if (e.key === 'Escape') showImagePropsModal = false; if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) applyImageProps() }}>
+      <!-- Header -->
+      <div class="flex items-start gap-3 border-b border-[var(--karbon-border)] bg-gradient-to-br from-violet-500/10 via-transparent to-transparent px-6 pt-5 pb-4">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-400 ring-1 ring-violet-500/30">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         </div>
-        <div class="space-y-1"><span class="rte-label">Texte alternatif</span><input type="text" bind:value={imageAlt} class="rte-input" /></div>
-        <div class="space-y-1"><span class="rte-label">Title</span><input type="text" bind:value={imageTitle} class="rte-input" /></div>
-        <div class="space-y-1">
-          <span class="rte-label">Alignement</span>
-          <div class="flex gap-1">
-            {#each [{ v: '', l: 'Aucun' }, { v: 'left', l: 'Gauche' }, { v: 'center', l: 'Centre' }, { v: 'right', l: 'Droite' }] as opt}
-              <button type="button" onclick={() => imageAlign = opt.v} class="rte-align-btn {imageAlign === opt.v ? 'rte-align-btn-active' : ''}">{opt.l}</button>
-            {/each}
+        <div class="min-w-0 flex-1">
+          <h3 id="rte-imgprops-title" class="text-sm font-semibold text-[var(--karbon-text)]">Propriétés de l'image</h3>
+          <p class="mt-1 truncate font-mono text-[11px] text-[var(--karbon-text-4)]" title={imageUrl}>{imageUrl.split('/').pop()?.split('?')[0] || imageUrl}</p>
+        </div>
+        <button type="button" onclick={() => showImagePropsModal = false} class="-mt-1 -mr-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[var(--karbon-text-4)] transition-colors hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]" aria-label="Fermer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      </div>
+
+      <!-- Body -->
+      <div class="max-h-[65vh] overflow-y-auto px-6 py-5">
+        <div class="grid gap-5 sm:grid-cols-[200px_1fr]">
+          <!-- Preview -->
+          <div class="space-y-2">
+            <div class="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-[var(--karbon-border)] bg-[var(--karbon-bg-2)] bg-[linear-gradient(45deg,rgba(255,255,255,0.03)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.03)_75%),linear-gradient(45deg,rgba(255,255,255,0.03)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.03)_75%)] bg-[length:16px_16px] bg-[position:0_0,8px_8px] p-3">
+              {#if imageUrl}<img src={imageUrl} alt={imageAlt} class="max-h-full max-w-full rounded-md object-contain shadow-lg shadow-black/30" />{/if}
+            </div>
+            {#if imageNatural.w}
+              <div class="flex items-center justify-between rounded-lg bg-[var(--karbon-bg-2)] px-2.5 py-1.5 text-[11px] ring-1 ring-[var(--karbon-border)]">
+                <span class="text-[var(--karbon-text-4)]">Originale</span>
+                <span class="font-mono text-[var(--karbon-text-2)]">{imageNatural.w} × {imageNatural.h}</span>
+              </div>
+            {/if}
+          </div>
+
+          <div class="space-y-5">
+            <!-- Dimensions -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Dimensions</span>
+                {#if imageNatural.w && (imageWidth !== String(imageNatural.w) || imageHeight !== String(imageNatural.h))}
+                  <button type="button" onclick={resetImageSize} class="cursor-pointer text-[11px] font-medium text-violet-400 transition-colors hover:text-violet-300">Taille originale</button>
+                {/if}
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="flex flex-1 items-stretch overflow-hidden rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] transition-colors focus-within:border-violet-500/70 focus-within:ring-2 focus-within:ring-violet-500/20">
+                  <span class="flex items-center border-r border-[var(--karbon-border-input)] px-2.5 text-[11px] font-semibold text-[var(--karbon-text-4)]">L</span>
+                  <input type="text" inputmode="numeric" bind:value={imageWidth} oninput={onImageWidthInput} placeholder="auto" aria-label="Largeur" class="w-full min-w-0 bg-transparent px-2.5 py-2 font-mono text-xs text-[var(--karbon-text)] outline-none placeholder:text-[var(--karbon-text-4)]/60" />
+                  <span class="flex items-center pr-2.5 text-[11px] text-[var(--karbon-text-4)]">px</span>
+                </label>
+                <button type="button" onclick={() => { imageLockRatio = !imageLockRatio; if (imageLockRatio) onImageWidthInput() }} aria-pressed={imageLockRatio} aria-label={imageLockRatio ? 'Déverrouiller les proportions' : 'Verrouiller les proportions'} title={imageLockRatio ? 'Proportions verrouillées' : 'Proportions libres'} class="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg ring-1 transition-colors {imageLockRatio ? 'bg-violet-500/15 text-violet-400 ring-violet-500/30' : 'text-[var(--karbon-text-4)] ring-[var(--karbon-border)] hover:text-[var(--karbon-text-2)]'}">
+                  {#if imageLockRatio}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg>
+                  {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7"/><path d="M15 7h2a5 5 0 0 1 4 8"/><line x1="8" x2="12" y1="12" y2="12"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                  {/if}
+                </button>
+                <label class="flex flex-1 items-stretch overflow-hidden rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] transition-colors focus-within:border-violet-500/70 focus-within:ring-2 focus-within:ring-violet-500/20">
+                  <span class="flex items-center border-r border-[var(--karbon-border-input)] px-2.5 text-[11px] font-semibold text-[var(--karbon-text-4)]">H</span>
+                  <input type="text" inputmode="numeric" bind:value={imageHeight} oninput={onImageHeightInput} placeholder="auto" aria-label="Hauteur" class="w-full min-w-0 bg-transparent px-2.5 py-2 font-mono text-xs text-[var(--karbon-text)] outline-none placeholder:text-[var(--karbon-text-4)]/60" />
+                  <span class="flex items-center pr-2.5 text-[11px] text-[var(--karbon-text-4)]">px</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Alignment -->
+            <div class="space-y-1.5">
+              <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Alignement</span>
+              <div class="grid grid-cols-4 gap-1 rounded-lg bg-[var(--karbon-bg-2)] p-1 ring-1 ring-[var(--karbon-border)]" role="radiogroup" aria-label="Alignement de l'image">
+                {#each [{ v: '', l: 'Aucun' }, { v: 'left', l: 'Gauche' }, { v: 'center', l: 'Centre' }, { v: 'right', l: 'Droite' }] as opt}
+                  <button type="button" role="radio" aria-checked={imageAlign === opt.v} onclick={() => imageAlign = opt.v} class="flex cursor-pointer flex-col items-center gap-1 rounded-md py-1.5 text-[10px] font-medium transition-all {imageAlign === opt.v ? 'bg-violet-600 text-white shadow-md shadow-violet-900/40' : 'text-[var(--karbon-text-4)] hover:bg-[var(--karbon-bg-card)] hover:text-[var(--karbon-text-2)]'}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="14" viewBox="0 0 22 14" fill="none" aria-hidden="true">
+                      {#if opt.v === 'left'}
+                        <rect x="1" y="2" width="8" height="7" rx="1" fill="currentColor"/><path d="M11 3h10M11 6h10M11 9h10M1 12h20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+                      {:else if opt.v === 'right'}
+                        <rect x="13" y="2" width="8" height="7" rx="1" fill="currentColor"/><path d="M1 3h10M1 6h10M1 9h10M1 12h20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+                      {:else if opt.v === 'center'}
+                        <path d="M1 1.5h20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/><rect x="7" y="3.5" width="8" height="7" rx="1" fill="currentColor"/><path d="M1 12.5h20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+                      {:else}
+                        <rect x="1" y="1" width="8" height="6" rx="1" fill="currentColor"/><path d="M1 9.5h20M1 12.5h14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+                      {/if}
+                    </svg>
+                    {opt.l}
+                  </button>
+                {/each}
+              </div>
+            </div>
           </div>
         </div>
-        <div class="space-y-1"><span class="rte-label">Classes CSS</span><input type="text" bind:value={imageClass} placeholder="ex: rounded shadow-lg" class="rte-input" /></div>
-        <div class="space-y-1"><span class="rte-label">Style inline</span><input type="text" bind:value={imageStyle} placeholder="ex: border-radius: 8px" class="rte-input font-mono text-xs" /></div>
+
+        <!-- Texts -->
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <label class="block space-y-1.5">
+            <span class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Texte alternatif</span>
+              {#if !imageAlt.trim()}
+                <span class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Recommandé (SEO / a11y)</span>
+              {:else}
+                <span class="text-[10px] text-[var(--karbon-text-4)] {imageAlt.length > 125 ? 'text-amber-400' : ''}">{imageAlt.length}/125</span>
+              {/if}
+            </span>
+            <input type="text" bind:value={imageAlt} placeholder="Décrivez l'image…" class="block w-full rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] px-3 py-2 text-xs text-[var(--karbon-text)] outline-none transition-colors placeholder:text-[var(--karbon-text-4)]/60 focus:border-violet-500/70 focus:ring-2 focus:ring-violet-500/20" />
+          </label>
+          <label class="block space-y-1.5">
+            <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Titre (info-bulle)</span>
+            <input type="text" bind:value={imageTitle} placeholder="Affiché au survol" class="block w-full rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] px-3 py-2 text-xs text-[var(--karbon-text)] outline-none transition-colors placeholder:text-[var(--karbon-text-4)]/60 focus:border-violet-500/70 focus:ring-2 focus:ring-violet-500/20" />
+          </label>
+        </div>
+
+        <!-- Advanced -->
+        <div class="mt-5 space-y-5 border-t border-[var(--karbon-border)] pt-5">
+          {@render classEditor()}
+          {@render styleEditor()}
+        </div>
       </div>
-      <div class="rte-modal-footer justify-between">
-        <button type="button" onclick={deleteTargetImage} class="rte-btn-danger-text">Supprimer</button>
-        <div class="flex gap-2">
-          <button type="button" onclick={() => showImagePropsModal = false} class="rte-btn-cancel">Annuler</button>
-          <button type="button" onclick={applyImageProps} class="rte-btn-primary">Appliquer</button>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between gap-3 border-t border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/50 px-6 py-3.5">
+        <button type="button" onclick={deleteTargetImage} class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          Supprimer
+        </button>
+        <div class="flex items-center gap-3">
+          <span class="hidden text-[11px] text-[var(--karbon-text-4)] md:inline"><kbd class="rounded border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] px-1 py-0.5 font-mono text-[10px]">Ctrl</kbd> + <kbd class="rounded border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] px-1 py-0.5 font-mono text-[10px]">Entrée</kbd></span>
+          <button type="button" onclick={() => showImagePropsModal = false} class="cursor-pointer rounded-lg border border-[var(--karbon-border)] px-4 py-2 text-xs font-medium text-[var(--karbon-text-3)] transition-colors hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]">Annuler</button>
+          <button type="button" onclick={applyImageProps} class="cursor-pointer rounded-lg bg-gradient-to-b from-violet-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-violet-900/40 ring-1 ring-violet-400/30 transition-all hover:from-violet-400 hover:to-violet-500 active:scale-[0.98]">Appliquer</button>
         </div>
       </div>
     </div>
@@ -1481,19 +1723,45 @@
 {#if showElementProps}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="rte-overlay" role="presentation" onclick={() => showElementProps = false} onkeydown={(e) => { if (e.key === "Escape") showElementProps = false }}>
-    <div class="rte-modal max-w-md" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
-      <div class="rte-modal-header">
-        <h3>Propriétés : <code class="text-violet-400">&lt;{elPropsTag}&gt;</code></h3>
-        <button type="button" onclick={() => showElementProps = false} class="rte-modal-close" aria-label="Fermer"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <div class="w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] shadow-2xl shadow-black/40 ring-1 ring-white/5" role="dialog" aria-modal="true" aria-labelledby="rte-elprops-title" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { e.stopPropagation(); if (e.key === 'Escape') showElementProps = false; if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) applyElementProps() }}>
+      <!-- Header -->
+      <div class="relative flex items-start gap-3 border-b border-[var(--karbon-border)] bg-gradient-to-br from-violet-500/10 via-transparent to-transparent px-6 pt-5 pb-4">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-400 ring-1 ring-violet-500/30">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <h3 id="rte-elprops-title" class="text-sm font-semibold text-[var(--karbon-text)]">Propriétés de l'élément</h3>
+            <code class="rounded-md bg-violet-500/15 px-1.5 py-0.5 font-mono text-[11px] font-medium text-violet-300 ring-1 ring-violet-500/25">&lt;{elPropsTag}{elPropsId ? `#${elPropsId.trim()}` : ''}&gt;</code>
+          </div>
+          {#if elPropsPreview}<p class="mt-1 truncate text-xs text-[var(--karbon-text-4)]">« {elPropsPreview} »</p>{/if}
+        </div>
+        <button type="button" onclick={() => showElementProps = false} class="-mt-1 -mr-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[var(--karbon-text-4)] transition-colors hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]" aria-label="Fermer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
-      <div class="space-y-3">
-        <div class="space-y-1"><span class="rte-label">ID</span><input type="text" bind:value={elPropsId} placeholder="identifiant" class="rte-input font-mono text-xs" /></div>
-        <div class="space-y-1"><span class="rte-label">Classes CSS</span><input type="text" bind:value={elPropsClass} placeholder="class1 class2" class="rte-input font-mono text-xs" /></div>
-        <div class="space-y-1"><span class="rte-label">Style inline</span><textarea bind:value={elPropsStyle} rows="3" placeholder="color: red; font-size: 16px;" class="rte-input font-mono text-xs"></textarea></div>
+
+      <!-- Body -->
+      <div class="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-5">
+        <!-- ID -->
+        <label class="block space-y-1.5">
+          <span class="text-[11px] font-semibold tracking-wider text-[var(--karbon-text-4)] uppercase">Identifiant</span>
+          <div class="flex items-stretch overflow-hidden rounded-lg border border-[var(--karbon-border-input)] bg-[var(--karbon-bg-input)] transition-colors focus-within:border-violet-500/70 focus-within:ring-2 focus-within:ring-violet-500/20">
+            <span class="flex items-center border-r border-[var(--karbon-border-input)] px-3 font-mono text-sm text-violet-400">#</span>
+            <input type="text" bind:value={elPropsId} placeholder="mon-identifiant" spellcheck="false" autocomplete="off" class="w-full bg-transparent px-3 py-2 font-mono text-xs text-[var(--karbon-text)] outline-none placeholder:text-[var(--karbon-text-4)]/60" />
+          </div>
+        </label>
+
+        {@render classEditor()}
+
+        {@render styleEditor()}
       </div>
-      <div class="rte-modal-footer justify-end">
-        <button type="button" onclick={() => showElementProps = false} class="rte-btn-cancel">Annuler</button>
-        <button type="button" onclick={applyElementProps} class="rte-btn-primary">Appliquer</button>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between gap-3 border-t border-[var(--karbon-border)] bg-[var(--karbon-bg-2)]/50 px-6 py-3.5">
+        <span class="hidden text-[11px] text-[var(--karbon-text-4)] sm:inline"><kbd class="rounded border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] px-1 py-0.5 font-mono text-[10px]">Ctrl</kbd> + <kbd class="rounded border border-[var(--karbon-border)] bg-[var(--karbon-bg-card)] px-1 py-0.5 font-mono text-[10px]">Entrée</kbd> pour appliquer</span>
+        <div class="ml-auto flex gap-2">
+          <button type="button" onclick={() => showElementProps = false} class="cursor-pointer rounded-lg border border-[var(--karbon-border)] px-4 py-2 text-xs font-medium text-[var(--karbon-text-3)] transition-colors hover:bg-[var(--karbon-bg-2)] hover:text-[var(--karbon-text)]">Annuler</button>
+          <button type="button" onclick={applyElementProps} class="cursor-pointer rounded-lg bg-gradient-to-b from-violet-500 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-violet-900/40 ring-1 ring-violet-400/30 transition-all hover:from-violet-400 hover:to-violet-500 active:scale-[0.98]">Appliquer</button>
+        </div>
       </div>
     </div>
   </div>
