@@ -11,7 +11,7 @@
     "publish:all": "pnpm -r publish --access public"
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=22.22",
     "pnpm": ">=10"
   },
   "pnpm": {
