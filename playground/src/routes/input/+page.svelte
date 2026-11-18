@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Input, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `import { Input } from '@karbonjs/ui-svelte'
 

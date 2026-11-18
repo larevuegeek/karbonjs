@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Checkbox, Toggle, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `import { Checkbox, Toggle } from '@karbonjs/ui-svelte'
 

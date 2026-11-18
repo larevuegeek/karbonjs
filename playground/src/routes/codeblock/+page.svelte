@@ -1,6 +1,6 @@
 <script lang="ts">
   import { CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const colors = ['red', 'emerald', 'cyan', 'blue', 'violet', 'pink'] as const;
 

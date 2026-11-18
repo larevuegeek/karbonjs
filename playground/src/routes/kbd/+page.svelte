@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Kbd } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 </script>
 
 <h1 class="text-3xl font-bold mb-2">Kbd</h1>

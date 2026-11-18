@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ImgBox, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `<script lang="ts">
   import { ImgBox } from '@karbonjs/ui-svelte'

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { AlertMessage, Button, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `import { AlertMessage } from '@karbonjs/ui-svelte'
 

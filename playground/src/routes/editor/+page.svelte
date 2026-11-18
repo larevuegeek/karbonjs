@@ -1,6 +1,6 @@
 <script lang="ts">
   import { RichTextEditor, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `<script lang="ts">
   import { RichTextEditor } from '@karbonjs/ui-svelte'

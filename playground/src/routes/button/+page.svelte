@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Button, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `import { Button } from '@karbonjs/ui-svelte'
 

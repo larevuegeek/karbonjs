@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Tooltip, Button, Badge, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `<script lang="ts">
   import { Tooltip, Button } from '@karbonjs/ui-svelte'

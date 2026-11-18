@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Textarea, CodeBlock } from '@karbonjs/ui-svelte';
-  import DemoSection from '$lib/DemoSection.svelte';
+  import DemoSection from '#lib/DemoSection.svelte';
 
   const usageCode = `import { Textarea } from '@karbonjs/ui-svelte'
 
